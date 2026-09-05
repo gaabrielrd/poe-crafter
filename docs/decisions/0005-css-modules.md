@@ -1,5 +1,10 @@
 # ADR 0005: Escolha de CSS Modules
 
+## Status
+
+Substituída pela [ADR 0016](0016-tailwind-shadcn-ui.md). O texto abaixo
+permanece como registro da arquitetura anterior.
+
 ## Contexto
 
 O projeto requer uma abordagem para estilização de componentes React. Existem inúmeras alternativas no ecossistema (Styled Components, Tailwind CSS, Sass, CSS puro). É necessário um método que previna vazamento de escopo de CSS (global styles) sem introduzir grande complexidade de build ou curva de aprendizado acentuada.

@@ -19,7 +19,12 @@ O repositório contém somente a fundação local:
 - Hosting para `apps/web/dist`.
 - Functions 2nd gen em Node 22, ainda sem handlers.
 - Firestore e Storage deny-all.
-- Emulator Suite no project ID `demo-poe-crafter`.
+- Emulator Suite para Auth, Firestore, Hosting e Storage no project ID
+  `demo-poe-crafter`. Functions permanece configurado, mas não inicia enquanto
+  não houver handler e SDK.
+
+`pnpm test:emulators` compila a aplicação, serve o Hosting e confirma que
+requisições anônimas recebem 403 no Firestore e no Storage.
 
 IDs e aliases reais ficam em `.firebaserc`, ignorado. Auth anônimo/Google,
 App Check, coleções e uploads entram com suas features e testes de rules.

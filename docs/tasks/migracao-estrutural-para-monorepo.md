@@ -3,10 +3,16 @@
 ## Estado
 
 - **Tipo:** plano de implementação
-- **Situação:** pronto para aprovação e execução
+- **Situação:** implementado e validado em 2026-09-05
 - **Marco:** primeiro marco técnico anterior às funcionalidades do produto
 - **Origem:** `docs/prd.md` e seção "Primeiro marco de implementação" de
   `docs/architecture.md`
+- **Evidência:**
+  [`docs/entregas/2026-09-05-migracao-para-monorepo-pnpm.md`](../entregas/2026-09-05-migracao-para-monorepo-pnpm.md)
+
+As listas abaixo preservam o roteiro aprovado. O resultado executado, os
+critérios atendidos, os testes e o único desvio de baseline estão registrados na
+evidência da entrega.
 
 ## Contexto
 

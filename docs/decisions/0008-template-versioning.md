@@ -1,6 +1,6 @@
 # 0008 - Versionamento e migrações locais do template
 
-- **Status**: Aceito
+- **Status**: Substituído pela [ADR 0015](0015-pnpm-workspaces-node-22.md)
 - **Data**: 2026-08-08
 
 ## Contexto

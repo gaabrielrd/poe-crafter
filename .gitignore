@@ -18,8 +18,8 @@ test-results/
 .firebaserc
 firebase-debug.log
 firebase-debug.*.log
+firestore-debug.log
 .firebase/
-.codex-node22-bin/
 .pnpm-store/
 
 # Skills geradas (cópias sincronizadas por pnpm sync:skills).

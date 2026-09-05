@@ -34,6 +34,13 @@ pnpm test:e2e
 Build, preview em porta efêmera e fluxos Chromium.
 
 ```bash
+pnpm test:emulators
+```
+
+Build, Hosting local e requisições não autenticadas que precisam receber 403
+do Firestore e do Storage. Requer Java 21 ou mais recente.
+
+```bash
 pnpm validate
 ```
 
@@ -63,9 +70,9 @@ regra própria; o fluxo que os consome continua testado.
 
 ## Firebase
 
-O marco estrutural verifica configuração válida e regras deny-all sem acessar
-produção. Quando uma feature liberar Firestore ou Storage, acrescente testes no
-Emulator Suite antes da regra permissiva. Use o project ID
+O marco estrutural verifica configuração válida e exercita as regras deny-all
+no Emulator Suite sem acessar produção. Quando uma feature liberar Firestore ou
+Storage, amplie `pnpm test:emulators` antes da regra permissiva. Use o project ID
 `demo-poe-crafter` e nunca credenciais reais.
 
 ## Reprodutibilidade

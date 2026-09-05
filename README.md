@@ -103,6 +103,7 @@ O workflow está em `.github/workflows/ci.yml`. Instalações no CI usam
 | `pnpm test:unit`                                | Executar os testes Vitest sem cobertura                       |
 | `pnpm test:e2e`                                 | Executar os fluxos críticos no Chromium                       |
 | `pnpm test:e2e:update`                          | Atualizar screenshots após inspeção visual                    |
+| `pnpm test:emulators`                           | Validar Hosting e regras deny-all no projeto demo             |
 | `pnpm check:architecture`                       | Verificar features e dependências entre workspaces            |
 | `pnpm check:styleguide`                         | Verificar Tailwind, shadcn, tokens, fontes e ícones           |
 | `pnpm check:firebase`                           | Verificar emuladores, Node 22 e regras deny-all               |

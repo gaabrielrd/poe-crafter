@@ -2,8 +2,9 @@
 
 ## Status
 
-Substituída pela [ADR 0014](0014-extract-shared-styleguide-package.md). A
-decisão abaixo registra o estado anterior à extração do pacote.
+Substituída inicialmente pela ADR 0014 e, no produto atual, pela
+[ADR 0016](0016-tailwind-shadcn-ui.md). A decisão abaixo registra o estado
+anterior.
 
 ## Contexto
 

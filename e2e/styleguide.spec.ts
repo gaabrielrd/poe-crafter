@@ -13,9 +13,6 @@ import { expect, test } from '@playwright/test';
  *    cada plataforma tem sua própria imagem de referência.
  */
 
-const screenshotName = 'styleguide.png';
-const baseline = join('e2e', '__screenshots__', process.platform, screenshotName);
-
 test('mantém o contrato de estilo do tema', async ({ page }) => {
   await page.goto('/styleguide');
 
@@ -48,18 +45,32 @@ test('mantém o contrato de estilo do tema', async ({ page }) => {
   expect(carregadas.some((font) => font.startsWith('Archivo Variable'))).toBe(true);
 });
 
-test('mantém a aparência da página do styleguide', async ({ page }) => {
-  // Sem referência para esta plataforma o teste é pulado com instrução, em vez
-  // de falhar por um arquivo que ninguém gerou ainda. `--update-snapshots`
-  // (npm run test:e2e:update) muda o modo e cria a imagem.
-  const criandoReferencia = test.info().config.updateSnapshots !== 'missing';
-  test.skip(
-    !existsSync(baseline) && !criandoReferencia,
-    `Sem imagem de referência para ${process.platform}. Gere com: npm run test:e2e:update`,
-  );
+const visualCases = [
+  { name: 'home-desktop.png', path: '/', width: 1280, height: 900 },
+  { name: 'styleguide-desktop.png', path: '/styleguide', width: 1280, height: 900 },
+  { name: 'not-found-desktop.png', path: '/rota-que-nao-existe', width: 1280, height: 900 },
+  { name: 'home-mobile.png', path: '/', width: 360, height: 760 },
+  { name: 'styleguide-mobile.png', path: '/styleguide', width: 360, height: 760 },
+  { name: 'not-found-mobile.png', path: '/rota-que-nao-existe', width: 360, height: 760 },
+];
 
-  await page.goto('/styleguide');
-  await page.waitForLoadState('networkidle');
+for (const visualCase of visualCases) {
+  test(`mantém a aparência de ${visualCase.name}`, async ({ page }) => {
+    const baseline = join('e2e', '__screenshots__', process.platform, visualCase.name);
+    // Sem referência para esta plataforma o teste é pulado com instrução. O
+    // modo `--update-snapshots` cria uma baseline que precisa de inspeção humana.
+    const criandoReferencia = test.info().config.updateSnapshots !== 'missing';
+    test.skip(
+      !existsSync(baseline) && !criandoReferencia,
+      `Sem imagem de referência para ${process.platform}. Gere com: pnpm test:e2e:update`,
+    );
 
-  await expect(page).toHaveScreenshot(screenshotName, { fullPage: true });
-});
+    await page.setViewportSize({ width: visualCase.width, height: visualCase.height });
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto(visualCase.path);
+    await page.waitForLoadState('networkidle');
+    await page.evaluate(() => document.fonts.ready);
+
+    await expect(page).toHaveScreenshot(visualCase.name, { fullPage: true });
+  });
+}
