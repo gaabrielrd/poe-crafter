@@ -1,60 +1,52 @@
 # Processo de desenvolvimento
 
-Fluxo recomendado para levar uma ideia até o código, de forma organizada e verificável.
+## Fluxo obrigatório
 
-## Fluxo
+1. Leia `README.md`, `docs/architecture.md`, este arquivo e os documentos
+   específicos da mudança.
+2. Confirme objetivo, critérios de aceite e não escopo.
+3. Inspecione código e testes existentes; prefira o grafo do codebase-memory.
+4. Para mudança multi-arquivo, crie e aprove um plano em `docs/tasks`.
+5. Implemente um incremento por vez e mantenha o escopo.
+6. Adicione ou atualize testes do comportamento observável.
+7. Execute testes focados durante o trabalho.
+8. Rode `pnpm validate` até ficar verde.
+9. Em interface, rode também `pnpm test:e2e` e inspecione desktop e 360 px.
+10. Revise o diff por escopo, arquitetura, segurança, acessibilidade e código
+    morto.
+11. Atualize documentação, ADRs e `AGENTS.md` quando as regras mudarem.
+12. Registre a evidência real em `docs/entregas`.
 
-1. **Descoberta do produto**: se a ideia ainda estiver vaga, use `plan-app`. Responda às perguntas até aprovar um escopo e um não escopo completos em `prd.md`.
-2. **Demanda**: escolha uma capacidade aprovada no PRD e descreva o que se quer resolver e para quem.
-3. **Especificação**: detalhe o comportamento esperado, entradas e saídas.
-4. **Critérios de aceite**: liste, de forma objetiva, o que precisa ser verdade para a demanda estar pronta.
-5. **Planejamento**: quebre em passos. Você pode pedir ao agente: "Use a skill plan-feature...".
-6. **Branch**: crie uma branch para o trabalho (`git checkout -b feat/descricao`).
-7. **Implementação**: escreva o código seguindo a [arquitetura](architecture.md).
-8. **Validação local**: rode `npm run validate` até ficar tudo verde. Em mudanças de interface, resolva também os avisos de `npm run check:styleguide`.
-9. **Evidência da entrega**: registre em [entregas](entregas/README.md) o que foi entregue, os testes e o resultado das validações. Você pode pedir ao agente: "Use a skill document-delivery...".
-10. **Commit**: registre as mudanças com mensagem clara.
-11. **Pull Request**: abra o PR descrevendo o que mudou e por quê.
-12. **Revisão**: ajuste conforme os comentários antes de integrar.
+## Incrementos
 
-Atualizações herdadas do template usam `npm run update:template -- --dry-run`
-antes da aplicação. Veja [updating.md](updating.md).
+Um incremento deve ser pequeno, testável e reversível. Movimentos de arquivo
+ficam separados de mudança de comportamento sempre que isso melhora a revisão.
+Não mantenha duas arquiteturas ou duas fontes da verdade como estado final.
 
-## Mensagens de commit
+## Branches e commits
 
-Use um prefixo de tipo:
+- Use branches com prefixo `codex/` para trabalho do Codex.
+- Primeira linha do commit: `tipo: descrição`, até 72 caracteres, sem ponto
+  final.
+- Corrija a causa de qualquer falha dos hooks antes do commit.
+- Não faça commit de outputs, caches, `.env`, `.firebaserc` ou segredos.
 
-```
-feat: adiciona filtro de busca na lista de clientes
-fix: corrige data exibida no formato errado
-docs: documenta como configurar variáveis de ambiente
-```
+## Dependências
 
-Outros prefixos úteis: `test:`, `refactor:`, `chore:`, `perf:`, `build:`, `ci:`, `style:`, `revert:`. Um escopo entre parênteses é opcional (`fix(notes): ...`), e `!` marca mudança incompatível (`feat!: ...`).
-
-A convenção é verificada pelo hook `commit-msg` (`scripts/check-commit-message.mjs`): a primeira linha precisa seguir `tipo: descrição`, ter no máximo 72 caracteres e não terminar com ponto. Commits de merge, revert e `fixup!` são ignorados.
-
-## Verificação automática
-
-| Momento      | O que roda                                            |
-| ------------ | ----------------------------------------------------- |
-| `pre-commit` | `lint-staged` nos arquivos alterados                  |
-| `commit-msg` | Convenção da mensagem                                 |
-| `pre-push`   | `typecheck` e `test:unit` (Vitest sem cobertura)      |
-| Pull Request | `validate` em Node 22/24, auditoria e E2E no Chromium |
-
-Os hooks são atalhos para pegar o problema cedo; corrija a causa quando um deles
-falhar. O CI executa os portões completos e é a fonte da verdade.
+Explique a necessidade antes de adicionar. Declare no workspace consumidor e
+use `workspace:*` para packages internos. Builds transitivos só entram em
+`allowBuilds` depois de revisão explícita.
 
 ## Definição de concluído
 
-Uma tarefa está concluída quando:
+Uma tarefa está concluída somente quando:
 
-- Os critérios de aceite foram atendidos
-- Funciona localmente
-- Os testes passam
-- Não há erro de lint, typecheck ou build (`npm run validate` verde)
-- O CI está verde no Pull Request
-- A documentação foi atualizada quando necessário
-- A entrega está registrada em [entregas](entregas/README.md)
-- As alterações estão registradas no Git
+- critérios de aceite estão atendidos;
+- comportamento alterado possui testes;
+- `pnpm validate` está verde;
+- E2E aplicável está verde;
+- diff foi revisado sem achados bloqueadores/importantes;
+- documentação e ADRs refletem o código;
+- regras persistentes dos agentes estão atuais;
+- evidência foi registrada em `docs/entregas`;
+- limitações e pendências conhecidas foram declaradas.

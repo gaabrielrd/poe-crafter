@@ -15,9 +15,9 @@ function assetPaths(html) {
 }
 
 export async function smokeBuild(root = defaultRoot) {
-  const dist = join(root, 'dist');
+  const dist = join(root, 'apps', 'web', 'dist');
   const index = join(dist, 'index.html');
-  if (!existsSync(index)) throw new Error('dist/index.html não foi gerado.');
+  if (!existsSync(index)) throw new Error('apps/web/dist/index.html não foi gerado.');
   const html = readFileSync(index, 'utf8');
   const assets = assetPaths(html);
   for (const asset of assets) {
@@ -56,7 +56,7 @@ export async function smokeBuild(root = defaultRoot) {
 
 async function main() {
   await smokeBuild();
-  console.log('Smoke test do bundle OK.');
+  console.log('Smoke test do bundle web OK.');
 }
 
 if (resolve(process.argv[1] ?? '') === fileURLToPath(import.meta.url)) {

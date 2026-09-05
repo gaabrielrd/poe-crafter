@@ -21,19 +21,19 @@ Indicado para:
 ## Pré-requisitos
 
 - Node.js 22 (a versão está em `.nvmrc`; com `nvm`, rode `nvm use`)
-- npm 10.6.0 (a versão exata declarada em `packageManager`)
+- pnpm 11.19.0 (a versão exata declarada em `packageManager`)
 - git
 
 ## Instalação
 
 ```bash
-npm install
+pnpm install --frozen-lockfile
 ```
 
 ## Execução
 
 ```bash
-npm run dev
+pnpm dev
 ```
 
 O Vite mostra no terminal o endereço local (algo como `http://localhost:5173`).
@@ -43,7 +43,7 @@ O Vite mostra no terminal o endereço local (algo como `http://localhost:5173`).
 Antes de considerar qualquer alteração pronta, rode:
 
 ```bash
-npm run validate
+pnpm validate
 ```
 
 Uma frase dizendo o que esse comando executa, em sequência.
@@ -59,22 +59,20 @@ Uma frase dizendo o que esse comando executa, em sequência.
 
 ## Comandos
 
-| Comando            | O que faz                          |
-| ------------------ | ---------------------------------- |
-| `npm run dev`      | Sobe o servidor de desenvolvimento |
-| `npm run build`    | Gera a versão de produção          |
-| `npm run test`     | Roda a suíte de testes             |
-| `npm run validate` | Roda todos os portões de qualidade |
+| Comando         | O que faz                          |
+| --------------- | ---------------------------------- |
+| `pnpm dev`      | Sobe o servidor de desenvolvimento |
+| `pnpm build`    | Gera a versão de produção          |
+| `pnpm test`     | Roda a suíte de testes             |
+| `pnpm validate` | Roda todos os portões de qualidade |
 
 ## Estrutura resumida
 
 ```
-src/
-├── app/          # composição geral (providers, rotas, layout)
-├── features/     # cada capacidade do produto em sua pasta
-├── shared/       # reutilizável e neutro
-└── main.tsx
-docs/             # esta documentação
+apps/web/src/     # aplicação React organizada por app, features e shared
+functions/src/    # limite inicial do backend Firebase
+packages/         # tipos e dados compartilháveis entre runtimes
+docs/             # documentação e decisões
 ```
 
 Detalhes em [docs/architecture.md](docs/architecture.md).
@@ -93,7 +91,7 @@ Veja [docs/agents.md](docs/agents.md) para a lista de skills.
 1. Peça ao agente um plano: "Use a skill plan-feature para planejar...".
 2. Revise o plano.
 3. Peça a implementação: "Use a skill implement-feature...".
-4. Rode `npm run validate`.
+4. Rode `pnpm validate`.
 5. Peça a evidência da entrega: "Use a skill document-delivery...".
 
 ## Como registrar uma decisão

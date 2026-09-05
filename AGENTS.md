@@ -6,93 +6,101 @@
 2. docs/architecture.md
 3. docs/development-process.md
 4. docs/testing.md
-5. docs/styleguide.md (antes de qualquer trabalho de interface)
+5. docs/styleguide.md antes de alterar interface
 
 ## Processo obrigatório
 
-1. Entenda a solicitação e os critérios de aceite.
-2. Inspecione os arquivos relevantes e os testes existentes.
-3. Apresente um plano para mudanças que afetam vários arquivos.
-4. Mantenha as alterações dentro do escopo solicitado.
-5. Adicione ou atualize testes para mudanças de comportamento.
-6. Execute `npm run validate`.
-7. Revise o diff final.
-8. Atualize a documentação afetada.
-9. Registre a evidência da entrega em `docs/entregas`.
+1. Confirme solicitação, critérios de aceite e não escopo.
+2. Inspecione arquivos e testes existentes; prefira o grafo do codebase-memory.
+3. Planeje mudanças multi-arquivo em `docs/tasks`.
+4. Implemente um incremento por vez sem expandir o escopo.
+5. Adicione ou atualize testes do comportamento alterado.
+6. Execute `pnpm validate`.
+7. Execute `pnpm test:e2e` para mudanças de interface ou fluxo web.
+8. Revise o diff final.
+9. Atualize documentação e ADRs afetados.
+10. Registre a evidência em `docs/entregas`.
 
 ## Arquitetura
 
-- Organize as capacidades do produto em `src/features`.
-- Não importe arquivos internos de outra feature.
-- Use as exportações públicas das features (index.ts).
-- Mantenha APIs externas e armazenamento do navegador atrás de serviços.
-- Mantenha `shared` neutro em relação ao domínio.
-- Não adicione abstrações sem necessidade demonstrada.
+- Mantenha código executável dentro de um workspace.
+- Organize capacidades web em `apps/web/src/features`.
+- Não importe internals de outra feature ou package.
+- Use `index.ts` e exports do package como interfaces públicas.
+- Mantenha `apps/web/src/shared` neutro em relação ao domínio.
+- Mantenha regras determinísticas em packages, sem React ou Firebase.
+- Mantenha handlers Firebase finos e sem regra de crafting.
+- Não adicione abstrações ou packages sem consumidor real.
+- Use `workspace:*` para dependências internas.
 
 ## Estilo e interface
 
 - Siga `docs/styleguide.md`.
-- Cor, espaçamento, tipografia, raio e transição vêm dos tokens de
-  `@vitru/styleguide/tokens.css`. Não escreva cor literal em CSS de componente.
-- Ícones somente de `lucide-react`, com a classe `icon`; acrescente
-  `icon-sm` para o tamanho menor.
-- Fontes oficiais: TheMix nos títulos (`--font-display`, só peso 700) e
-  Archivo no texto (`--font-sans`). Não adicione fonte nem use CDN.
-- Estilo de componente fica no CSS Module do próprio componente.
-- Monte as telas com o kit de `@vitru/styleguide` (`PageHeader`, `Card`,
-  `Input`, `Table`, `Alert`, `Dialog`, `LoadingState`, `EmptyState`,
-  `ErrorState`...). Só crie componente novo se nenhum deles resolver.
-- Campo de formulário sempre pelo `Input`/`Textarea`/`Select`.
-- Toda tela que busca dados cobre carregando, vazio, erro e sucesso.
-- Para mudar a identidade visual, altere os tokens, não os componentes.
-- Mantenha a rota `/styleguide` funcionando e atualizada.
+- Use Tailwind e os tokens de `apps/web/src/styles/globals.css`.
+- Não escreva cor literal nem replique token em componente.
+- Use componentes shadcn/ui existentes em `apps/web/src/shared/ui`.
+- Adicione um componente shadcn somente quando uma tela real exigir.
+- Use somente ícones de `lucide-react`.
+- Use TheMix nos títulos e Archivo no texto; não use CDN de fontes.
+- Cubra carregando, vazio, erro, sucesso e permissão em telas assíncronas.
+- Preserve teclado, foco visível, reduced motion, WCAG 2.2 AA e 360 px.
+- Mantenha `/styleguide` funcionando e atualizada.
 
 ## Escopo
 
 - Não expanda o escopo além do solicitado.
-- Uma funcionalidade por vez.
+- Implemente uma funcionalidade por vez.
+- Não antecipe modelo, API ou package de capacidade futura.
 
 ## Dependências
 
-- Não adicione dependências sem explicar a necessidade.
-- Prefira APIs da plataforma e dependências existentes.
+- Explique a necessidade antes de adicionar dependência.
+- Declare a dependência no workspace consumidor.
+- Revise scripts transitivos antes de alterar `allowBuilds`.
+- Não adicione orquestrador de monorepo sem necessidade demonstrada e ADR.
 
 ## Segurança
 
-- Nunca faça commit de segredos.
+- Nunca faça commit de segredos, `.env.local`, `.firebaserc` ou service account.
+- Use `demo-poe-crafter` no Emulator Suite.
+- Mantenha Firestore e Storage deny-all até a feature liberar acesso com testes.
+- Não acesse projeto Firebase real sem autorização explícita.
 
 ## Armazenamento e APIs
 
-- Chamadas HTTP em serviços/clientes.
-- Acesso a localStorage em adaptadores/repositórios.
-- Leitura de `import.meta.env` só em `shared/config/env.ts`.
+- Mantenha HTTP, Firebase e armazenamento em services/adapters/repositories.
+- Leia `import.meta.env` somente em `apps/web/src/shared/config/env.ts`.
+- Valide dados externos antes de entrar no domínio.
+- Não use APIs da GGG.
 
 ## Rotas
 
 - Importe de `react-router`, nunca de `react-router-dom`.
-- Acrescente rotas em `app/routes`, mantendo a curinga `'*'` por último.
-- Não envolva o `<Outlet />` em `ErrorBoundary`: o `errorElement` já cobre.
+- Acrescente rotas em `apps/web/src/app/routes`.
+- Mantenha a rota `'*'` por último.
+- Não envolva `<Outlet />` em ErrorBoundary; use `errorElement`.
 
 ## Commits
 
-- Primeira linha no formato `tipo: descrição`, até 72 caracteres, sem ponto final.
-- Não use `--no-verify` para contornar os hooks.
+- Use `tipo: descrição`, até 72 caracteres e sem ponto final.
+- Corrija a causa de falhas dos hooks antes do commit.
 
 ## Testes
 
-- Toda mudança de comportamento deve considerar testes.
-- Teste o resultado observável.
-- `npm run test` aplica limites de cobertura; não os reduza para fazer passar.
+- Teste resultado observável, não detalhe interno.
+- Coloque testes web na feature em `tests`.
+- Não reduza os limites de cobertura.
+- Atualize screenshots somente após inspecionar a diferença.
+- Use emuladores e project ID demo em testes Firebase.
 
 ## Documentação
 
-- Toda decisão relevante atualiza a documentação ou uma ADR.
-- Toda entrega implementada gera um registro em `docs/entregas`, com
-  funcionalidades, testes e o resultado real das validações.
-- Mudança que cria ou revoga uma regra atualiza este `AGENTS.md`.
+- Registre decisão relevante em documentação ou ADR.
+- Marque ADR superada e aponte a substituta; não apague o histórico.
+- Atualize este arquivo quando uma regra for criada, alterada ou revogada.
+- Registre toda entrega implementada em `docs/entregas`.
 
 ## Conclusão
 
-Uma tarefa só está concluída quando todos os itens da definição de
-concluído estiverem satisfeitos. A lista fica em
-`docs/development-process.md` e é a única fonte da verdade.
+Uma tarefa só termina quando a definição de concluído em
+`docs/development-process.md` estiver satisfeita.

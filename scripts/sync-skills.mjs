@@ -3,7 +3,7 @@
 // em `.claude/skills` e `.agents/skills`.
 //
 // NÃO edite as cópias manualmente: elas são recriadas por este script.
-// Uso: `npm run sync:skills` (ou `node scripts/sync-skills.mjs`).
+// Uso: `pnpm sync:skills` (ou `node scripts/sync-skills.mjs`).
 //
 // Compatível com macOS, Linux e Windows: usa apenas APIs nativas do Node
 // (node:fs, node:path, node:url) — sem comandos de shell.

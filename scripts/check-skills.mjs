@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 // Verifica a integridade das skills e se as cópias geradas estão sincronizadas.
 //
-// Executado dentro de `npm run validate`. Sai com código != 0 em caso de erro.
-// Uso: `npm run check:skills` (ou `node scripts/check-skills.mjs`).
+// Executado dentro de `pnpm validate`. Sai com código != 0 em caso de erro.
+// Uso: `pnpm check:skills` (ou `node scripts/check-skills.mjs`).
 //
 // Regras verificadas:
 //  1. Cada skill em `skills/` possui um `SKILL.md`.
@@ -149,7 +149,7 @@ function compareCopies(skills) {
 
   for (const destRoot of destinations) {
     if (!existsSync(destRoot)) {
-      errors.push(`Copia ausente: "${destRoot}" nao existe. Rode "npm run sync:skills".`);
+      errors.push(`Copia ausente: "${destRoot}" nao existe. Rode "pnpm sync:skills".`);
       continue;
     }
 
@@ -159,12 +159,12 @@ function compareCopies(skills) {
     const extra = destSkills.filter((s) => !skills.includes(s));
     if (missing.length > 0) {
       errors.push(
-        `"${destRoot}": skill(s) faltando: ${missing.join(', ')}. Rode "npm run sync:skills".`,
+        `"${destRoot}": skill(s) faltando: ${missing.join(', ')}. Rode "pnpm sync:skills".`,
       );
     }
     if (extra.length > 0) {
       errors.push(
-        `"${destRoot}": skill(s) extra(s) nao presentes na fonte: ${extra.join(', ')}. Rode "npm run sync:skills".`,
+        `"${destRoot}": skill(s) extra(s) nao presentes na fonte: ${extra.join(', ')}. Rode "pnpm sync:skills".`,
       );
     }
 
@@ -179,7 +179,7 @@ function compareCopies(skills) {
       for (const file of srcFiles) {
         if (!destSet.has(file)) {
           errors.push(
-            `"${destRoot}/${skill}": arquivo faltando na copia: ${file}. Rode "npm run sync:skills".`,
+            `"${destRoot}/${skill}": arquivo faltando na copia: ${file}. Rode "pnpm sync:skills".`,
           );
           continue;
         }
@@ -187,7 +187,7 @@ function compareCopies(skills) {
         const destContent = readFileSync(join(destRoot, skill, file));
         if (!srcContent.equals(destContent)) {
           errors.push(
-            `"${destRoot}/${skill}": conteudo divergente em ${file}. Rode "npm run sync:skills".`,
+            `"${destRoot}/${skill}": conteudo divergente em ${file}. Rode "pnpm sync:skills".`,
           );
         }
       }
@@ -195,7 +195,7 @@ function compareCopies(skills) {
       for (const file of destFiles) {
         if (!srcSet.has(file)) {
           errors.push(
-            `"${destRoot}/${skill}": arquivo extra na copia (nao existe na fonte): ${file}. Rode "npm run sync:skills".`,
+            `"${destRoot}/${skill}": arquivo extra na copia (nao existe na fonte): ${file}. Rode "pnpm sync:skills".`,
           );
         }
       }
@@ -222,7 +222,7 @@ function main() {
     for (const err of errors) {
       console.error(`  - ${err}`);
     }
-    console.error(`\nTotal de problemas: ${errors.length}. Corrija ou rode "npm run sync:skills".`);
+    console.error(`\nTotal de problemas: ${errors.length}. Corrija ou rode "pnpm sync:skills".`);
     process.exit(1);
   }
 

@@ -13,8 +13,8 @@ function project(readme) {
   return root;
 }
 
-test('aceita links locais e comandos documentados válidos', () => {
-  const root = project('[Arquitetura](docs/architecture.md) e `npm run validate`.');
+test('aceita links locais e comandos pnpm documentados válidos', () => {
+  const root = project('[Arquitetura](docs/architecture.md) e `pnpm validate`.');
   try {
     writeFileSync(join(root, 'docs', 'architecture.md'), '# Arquitetura\n');
     assert.deepEqual(checkDocs(root), []);
@@ -23,8 +23,8 @@ test('aceita links locais e comandos documentados válidos', () => {
   }
 });
 
-test('encontra links quebrados e scripts npm inexistentes', () => {
-  const root = project('[Ausente](docs/nope.md) e `npm run nao-existe`.');
+test('encontra links quebrados e scripts pnpm inexistentes', () => {
+  const root = project('[Ausente](docs/nope.md) e `pnpm nao-existe`.');
   try {
     assert.equal(checkDocs(root).length, 2);
   } finally {
@@ -41,12 +41,21 @@ test('rejeita recomendação para contornar hooks', () => {
   }
 });
 
-test('rejeita hook que chama script npm inexistente', () => {
+test('rejeita hook que chama script pnpm inexistente', () => {
   const root = project('# Projeto');
   try {
     mkdirSync(join(root, '.husky'), { recursive: true });
-    writeFileSync(join(root, '.husky', 'pre-push'), 'npm run teste-inexistente\n');
+    writeFileSync(join(root, '.husky', 'pre-push'), 'pnpm teste-inexistente\n');
     assert.match(checkDocs(root).join('\n'), /\.husky\/pre-push.*teste-inexistente/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('rejeita comando npm em documentação operacional', () => {
+  const root = project('Use `npm run validate`.');
+  try {
+    assert.match(checkDocs(root).join('\n'), /comando npm ativo; use pnpm/);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

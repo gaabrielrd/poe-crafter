@@ -9,14 +9,14 @@
 ## Como testar
 
 1. `npm install`
-2. `npm run validate`
+2. `pnpm validate`
 3. <!-- Passos adicionais, se necessário. -->
 
 ## Checklist
 
 - [ ] Critérios de aceite atendidos
 - [ ] Testes adicionados ou atualizados
-- [ ] `npm run validate` passa
+- [ ] `pnpm validate` passa
 - [ ] Documentação atualizada (se aplicável)
 - [ ] Sem segredos no código
 - [ ] Diff revisado

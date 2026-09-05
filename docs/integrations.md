@@ -1,54 +1,60 @@
 # Integrações e APIs
 
-Como consumir dados externos com segurança neste template.
+## Fronteiras
 
-## Consumo de APIs
+Na web, APIs e persistência ficam em `services`, `adapters` ou `repositories`.
+Components não fazem `fetch` e não acessam Firebase diretamente.
 
-Todo acesso a uma API passa por `services/`, `adapters/` ou `repositories/`
-dentro da feature. Infraestrutura neutra compartilhada pode usar as mesmas
-pastas em `shared/`. Os componentes nunca fazem `fetch` diretamente. Isso
-concentra a lógica de rede e o tratamento de erros em um só lugar.
+Em Functions, handlers validam identidade, App Check, permissão e payload antes
+de chamar packages. Segredos nunca chegam ao browser. Packages de domínio não
+importam SDKs Firebase.
 
-`npm run check:architecture` rejeita `fetch` e `localStorage` fora dessas
-fronteiras, além de rejeitar `import.meta.env` fora de
-`shared/config/env.ts`. Arquivos de teste são excluídos dessas regras para que
-possam preparar o ambiente e substituir APIs da plataforma.
+`pnpm check:architecture` verifica essas fronteiras e mantém
+`import.meta.env` restrito a `apps/web/src/shared/config/env.ts`.
 
-Prefira o `fetch` nativo. Só adote uma biblioteca de requisições se houver necessidade real (e registre a decisão em um ADR).
+## Firebase
 
-## Variáveis de ambiente
+O repositório contém somente a fundação local:
 
-- No Vite, apenas variáveis com prefixo `VITE_` são expostas ao código do cliente.
-- Documente as variáveis necessárias em `.env.example`.
-- Crie um `.env.local` para os valores do seu ambiente.
-- **Nunca** faça commit de `.env` ou `.env.local`.
+- Hosting para `apps/web/dist`.
+- Functions 2nd gen em Node 22, ainda sem handlers.
+- Firestore e Storage deny-all.
+- Emulator Suite no project ID `demo-poe-crafter`.
 
-Exemplo em `.env.example`:
+IDs e aliases reais ficam em `.firebaserc`, ignorado. Auth anônimo/Google,
+App Check, coleções e uploads entram com suas features e testes de rules.
 
-```
-# VITE_API_BASE_URL=https://api.exemplo.com
-```
+## RePoE
 
-## Segredos: proibido no front-end
+Será a única matéria-prima de game data do MVP. O adaptador viverá em
+`packages/poe-data`, validará schemas próprios e publicará versões imutáveis. Uma
+falha nunca substitui a versão ativa.
 
-Tudo que vai para o navegador entra no bundle e é **público**. Qualquer pessoa consegue ler. Por isso:
+## poe.ninja
 
-- Não coloque chaves de API secretas, senhas ou tokens no código nem em variáveis `VITE_`.
-- Segredos só existem em servidores, que este template não inclui.
-- Se uma integração exige um segredo, ela precisa de um backend intermediário — fora do escopo da versão 1.
+Um futuro job diário publicará snapshots imutáveis normalizados em chaos. O
+planner lê snapshots e não chama o provider durante a busca. Falha preserva o
+último snapshot e seu horário.
 
-## CORS
+## Cloud Vision
 
-APIs externas precisam permitir a origem do seu app (cabeçalhos CORS). Se aparecer erro de CORS no navegador, o ajuste é do lado do servidor da API; não há como contornar apenas no front-end.
+Será usado apenas no backend para OCR, com limite de 1.000 imagens/mês. O texto
+extraído usa o mesmo parser da entrada colada e exige confirmação. Quando a cota
+fecha, texto continua disponível.
 
-## Tratamento de erros
+## Google Identity
 
-No serviço, verifique se a resposta foi bem-sucedida e traduza falhas em erros claros para a interface. Na tela, trate os estados explicitamente: **carregando**, **vazio**, **sucesso** e **erro**.
+A sessão começa anônima e pode ser vinculada somente ao Google. Não haverá
+email/senha ou outro provider no MVP.
 
-## Timeouts
+## APIs da GGG
 
-Requisições podem travar. Use um timeout (por exemplo, com `AbortController`) para não deixar a interface esperando indefinidamente, e mostre uma mensagem de erro quando o tempo estourar.
+Não integrar nem depender delas. Se RePoE ou poe.ninja mudarem, mantenha schemas
+próprios, cache, timeout, retry limitado e fallback explícito.
 
-## Dados fake em desenvolvimento e testes
+## Variáveis e segredos
 
-Para desenvolver ou testar sem depender de uma API real, use um adaptador com dados fake que respeite a mesma interface do serviço. Assim a tela funciona igual, e os testes ficam rápidos e previsíveis.
+- Tudo com prefixo `VITE_` é público.
+- Documente variáveis web em `.env.example`.
+- Segredos usam o mecanismo do backend Firebase e nunca entram em `.env` web.
+- Não faça commit de `.env.local`, `.firebaserc`, tokens ou service accounts.

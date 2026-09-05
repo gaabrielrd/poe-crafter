@@ -23,9 +23,9 @@ Revisar o diff de uma tarefa antes de considerá-la concluída.
 5. Verifique se não foram adicionadas dependências desnecessárias.
 6. Procure erros de lógica e tratamento de falhas.
 7. Verifique acessibilidade nos componentes de interface.
-8. Verifique a aderência ao styleguide: kit de `@vitru/styleguide`, tokens
-   em vez de cor literal e ícones apenas de `lucide-react`
-   (`npm run check:styleguide`).
+8. Verifique a aderência ao styleguide: tokens semânticos do tema Tailwind,
+   componentes locais em `apps/web/src/shared/ui`, ausência de CSS Modules e
+   ícones apenas de `lucide-react` (`pnpm check:styleguide`).
 9. Verifique se há testes para o comportamento alterado.
 10. Verifique se a documentação foi atualizada.
 11. Confirme que não há segredos expostos.

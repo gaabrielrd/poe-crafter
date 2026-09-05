@@ -15,8 +15,14 @@ test-results/
 .env
 .env.local
 .env.*.local
+.firebaserc
+firebase-debug.log
+firebase-debug.*.log
+.firebase/
+.codex-node22-bin/
+.pnpm-store/
 
-# Skills geradas (cópias sincronizadas por npm run sync:skills).
+# Skills geradas (cópias sincronizadas por pnpm sync:skills).
 # Só as cópias são ignoradas: assim o projeto pode versionar configurações
 # de agente como .claude/settings.json.
 .claude/skills/

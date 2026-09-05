@@ -1,56 +1,50 @@
-# Contribuindo com o template
-
-Estas regras valem para quem melhora o próprio `web-project-template`. Para usar o template em um projeto, veja o [README](README.md).
+# Contribuindo
 
 ## Fluxo de trabalho
 
-1. Crie uma branch a partir da principal: `git checkout -b tipo/descricao-curta` (ex.: `feat/nova-skill`).
-2. Faça as alterações em commits pequenos e com mensagem clara.
-3. Rode a validação completa antes de abrir o Pull Request:
+1. Crie uma branch com prefixo `codex/` para trabalho assistido.
+2. Confirme requisito, critérios de aceite e não escopo.
+3. Planeje mudanças multi-arquivo em `docs/tasks`.
+4. Implemente um incremento por vez com testes observáveis.
+5. Rode:
 
 ```bash
-npm run validate
+pnpm validate
 ```
 
-4. Abra o Pull Request descrevendo o que mudou e por quê.
-5. Aguarde a revisão e ajuste conforme os comentários.
+6. Para interface, rode também:
 
-## Convenção de commits
-
-Use um prefixo que indique o tipo da mudança:
-
-- `feat:` nova funcionalidade
-- `fix:` correção de bug
-- `docs:` documentação
-- `test:` testes
-- `refactor:` melhoria interna sem mudança de comportamento
-- `chore:` tarefas de manutenção (configs, dependências)
-
-Exemplos:
-
-```
-feat: adiciona skill generate-tests
-fix: corrige caminho na sincronização de skills
-docs: explica variáveis de ambiente em integrations
+```bash
+pnpm test:e2e
 ```
 
-O hook `commit-msg` verifica essa convenção automaticamente. Veja as regras completas em [docs/development-process.md](docs/development-process.md).
+7. Revise o diff, atualize docs/ADRs e registre a entrega.
 
-## Documentação e ADRs
+## Commits
 
-Toda mudança de arquitetura ou de regra do template deve atualizar a documentação afetada em `docs/`. Se a mudança for uma decisão relevante, registre um ADR em `docs/decisions/` seguindo o formato do [0001](docs/decisions/0001-initial-architecture.md).
+Use `tipo: descrição`, até 72 caracteres e sem ponto final. Tipos comuns:
+`feat`, `fix`, `docs`, `test`, `refactor` e `chore`. Não contorne hooks.
 
-## Política de dependências
+## Arquitetura
 
-Mantenha o conjunto de dependências enxuto. Toda nova dependência precisa ser justificada no Pull Request: por que ela é necessária, o que ela resolve e por que não dá para fazer com o que já existe. Prefira soluções nativas (ex.: `fetch` em vez de uma biblioteca de requisições).
+Respeite as APIs públicas de features e workspaces descritas em
+[docs/architecture.md](docs/architecture.md). APIs, Firebase e armazenamento
+ficam atrás de services/adapters/repositories.
+
+## Dependências
+
+Declare a dependência no workspace consumidor e explique a necessidade.
+Dependências internas usam `workspace:*`. Um novo script transitivo exige revisão
+antes de entrar em `allowBuilds`.
+
+## Interface
+
+Leia [docs/styleguide.md](docs/styleguide.md). Use Tailwind, tokens semânticos,
+componentes locais shadcn/ui e Lucide. Mantenha `/styleguide`, teclado, foco,
+reduced motion e largura de 360 px.
 
 ## Definição de concluído
 
-Uma contribuição está pronta quando:
-
-- Roda localmente sem erros
-- Os testes passam
-- Não há erro de lint, typecheck ou build (`npm run validate` verde)
-- O CI está verde no Pull Request
-- A documentação e/ou ADR foram atualizados quando necessário
-- As alterações estão registradas no Git
+A contribuição está pronta quando os critérios foram atendidos, testes e E2E
+aplicável passam, `pnpm validate` está verde, o diff não expõe segredo e a
+documentação/evidência foram atualizadas.

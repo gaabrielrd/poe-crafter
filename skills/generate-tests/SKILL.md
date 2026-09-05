@@ -22,8 +22,8 @@ código.
 3. Cubra os casos de sucesso e de falha.
 4. Não remova nem enfraqueça testes existentes.
 5. Mantenha os testes próximos da feature, na pasta `tests`.
-6. Reutilize utilitários de teste já existentes em `src/test`.
-7. Execute a suíte de testes (`npm run test`).
+6. Reutilize utilitários de teste já existentes em `apps/web/src/test`.
+7. Execute a suíte de testes (`pnpm test`).
 
 ## Resultado esperado
 

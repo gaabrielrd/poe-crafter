@@ -11,8 +11,8 @@ updates:
       prefix: chore
       include: scope
     groups:
-      # Agrupa atualizações de patch/minor em um único PR para reduzir ruído.
-      # Majors continuam vindo separados, pois exigem leitura do changelog.
+      # O ecossistema npm do Dependabot compreende o pnpm-lock.yaml e os
+      # manifestos de todos os workspaces declarados na raiz.
       dev-dependencies:
         dependency-type: development
         update-types: ['minor', 'patch']

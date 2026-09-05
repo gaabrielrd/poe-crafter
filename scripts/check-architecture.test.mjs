@@ -1,16 +1,16 @@
 import assert from 'node:assert/strict';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import test from 'node:test';
 import { checkArchitecture } from './check-architecture.mjs';
 
 function withProject(files, assertion) {
-  const root = mkdtempSync(join(tmpdir(), 'web-architecture-'));
+  const root = mkdtempSync(join(tmpdir(), 'poe-architecture-'));
   try {
     for (const [path, content] of Object.entries(files)) {
-      const file = join(root, 'src', path);
-      mkdirSync(join(file, '..'), { recursive: true });
+      const file = join(root, path);
+      mkdirSync(dirname(file), { recursive: true });
       writeFileSync(file, content);
     }
     assertion(root);
@@ -19,30 +19,37 @@ function withProject(files, assertion) {
   }
 }
 
+const web = (path) => `apps/web/src/${path}`;
+
 test('aceita consumo pela interface pública da feature', () => {
   withProject(
-    { 'app/App.tsx': "import { Notes } from '@/features/notes';", 'features/notes/index.ts': '' },
+    {
+      [web('app/App.tsx')]: "import { Notes } from '@/features/notes';",
+      [web('features/notes/index.ts')]: '',
+    },
     (root) => assert.deepEqual(checkArchitecture(root), []),
   );
 });
 
 test('rejeita import interno entre features', () => {
   withProject(
-    { 'features/search/index.ts': "export { parse } from '@/features/notes/model/note';" },
+    { [web('features/search/index.ts')]: "export { parse } from '@/features/notes/model/note';" },
     (root) => assert.equal(checkArchitecture(root).length, 1),
   );
 });
 
 test('rejeita dependência de domínio dentro de shared', () => {
-  withProject({ 'shared/lib/format.ts': "import type { Note } from '@/features/notes';" }, (root) =>
-    assert.equal(checkArchitecture(root).length, 1),
+  withProject(
+    { [web('shared/lib/format.ts')]: "import type { Note } from '@/features/notes';" },
+    (root) => assert.equal(checkArchitecture(root).length, 1),
   );
 });
 
 test('rejeita import dinâmico de arquivo interno de outra feature', () => {
   withProject(
     {
-      'features/search/index.ts': "const notes = import('@/features/notes/services/noteStorage');",
+      [web('features/search/index.ts')]:
+        "const notes = import('@/features/notes/services/noteStorage');",
     },
     (root) => assert.equal(checkArchitecture(root).length, 1),
   );
@@ -50,7 +57,7 @@ test('rejeita import dinâmico de arquivo interno de outra feature', () => {
 
 test('rejeita fetch fora de uma fronteira de serviço', () => {
   withProject(
-    { 'features/search/components/Search.tsx': "export const load = () => fetch('/api');" },
+    { [web('features/search/components/Search.tsx')]: "export const load = () => fetch('/api');" },
     (root) =>
       assert.match(checkArchitecture(root).join('\n'), /fetch.*services, adapters ou repositories/),
   );
@@ -59,7 +66,8 @@ test('rejeita fetch fora de uma fronteira de serviço', () => {
 test('rejeita localStorage fora de uma fronteira de persistência', () => {
   withProject(
     {
-      'features/notes/components/Notes.tsx': "export const load = () => localStorage.getItem('x');",
+      [web('features/notes/components/Notes.tsx')]:
+        "export const load = () => localStorage.getItem('x');",
     },
     (root) => assert.match(checkArchitecture(root).join('\n'), /localStorage.*services/),
   );
@@ -67,18 +75,21 @@ test('rejeita localStorage fora de uma fronteira de persistência', () => {
 
 test('rejeita import.meta.env fora do módulo de configuração', () => {
   withProject(
-    { 'features/search/services/search.ts': 'export const url = import.meta.env.VITE_API_URL;' },
+    {
+      [web('features/search/services/search.ts')]:
+        'export const url = import.meta.env.VITE_API_URL;',
+    },
     (root) => assert.match(checkArchitecture(root).join('\n'), /import\.meta\.env.*shared\/config/),
   );
 });
 
-test('aceita APIs de fronteira nos caminhos permitidos', () => {
+test('aceita APIs web nos limites permitidos', () => {
   withProject(
     {
-      'features/search/services/search.ts': "export const load = () => fetch('/api');",
-      'features/notes/repositories/notes.ts':
+      [web('features/search/services/search.ts')]: "export const load = () => fetch('/api');",
+      [web('features/notes/repositories/notes.ts')]:
         "export const load = () => window.localStorage.getItem('notes');",
-      'shared/config/env.ts': 'export const raw = import.meta.env;',
+      [web('shared/config/env.ts')]: 'export const raw = import.meta.env;',
     },
     (root) => assert.deepEqual(checkArchitecture(root), []),
   );
@@ -87,11 +98,36 @@ test('aceita APIs de fronteira nos caminhos permitidos', () => {
 test('ignora comentários, strings e arquivos de teste', () => {
   withProject(
     {
-      'features/search/components/Search.tsx':
+      [web('features/search/components/Search.tsx')]:
         "// fetch('/api')\nexport const text = 'localStorage import.meta.env';",
-      'features/search/tests/Search.test.ts':
+      [web('features/search/tests/Search.test.ts')]:
         'export const load = () => fetch(String(import.meta.env.VITE_API_URL)); localStorage.clear();',
     },
     (root) => assert.deepEqual(checkArchitecture(root), []),
+  );
+});
+
+test('aceita dependências previstas entre workspaces', () => {
+  withProject(
+    {
+      'functions/src/index.ts': "import type {} from '@poe-crafter/poe-data';",
+      'packages/poe-data/src/index.ts': "import type {} from '@poe-crafter/shared-types';",
+      [web('main.tsx')]: "import type {} from '@poe-crafter/shared-types';",
+    },
+    (root) => assert.deepEqual(checkArchitecture(root), []),
+  );
+});
+
+test('rejeita dependência invertida e import de internals', () => {
+  withProject(
+    {
+      'packages/shared-types/src/index.ts': "import type {} from '@poe-crafter/poe-data';",
+      [web('main.tsx')]: "import type {} from '@poe-crafter/shared-types/internal';",
+    },
+    (root) => {
+      const errors = checkArchitecture(root).join('\n');
+      assert.match(errors, /shared-types.*não pode importar.*poe-data/);
+      assert.match(errors, /shared-types.*apenas por sua API pública/);
+    },
   );
 });

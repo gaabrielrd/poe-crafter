@@ -1,21 +1,4 @@
 #!/usr/bin/env node
-// Verifica se o styleguide do template continua sendo respeitado.
-//
-// Executado dentro de `npm run validate`. Por padrão apenas AVISA (sai com
-// código 0), para não bloquear quem está no meio de uma refatoração visual.
-// Use `npm run check:styleguide -- --strict` (ou no CI) para transformar os
-// avisos em falha.
-//
-// Regras verificadas:
-//  1. O pacote `@vitru/styleguide` está instalado e expõe os tokens esperados.
-//  2. `main.tsx` importa o CSS público e `index.html` declara o tema.
-//  3. Nenhum CSS fora de `tokens.css` usa cor literal (hex, rgb, hsl ou nome
-//     de cor CSS): componentes consomem `var(--token)`.
-//  4. A única biblioteca de ícones é `lucide-react`, declarada em
-//     `dependencies`.
-//  5. O pacote continua expondo o kit base esperado pelo template.
-//
-// Compatível com macOS, Linux e Windows: apenas APIs nativas do Node.
 
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, extname, join, relative, resolve, sep } from 'node:path';
@@ -23,74 +6,27 @@ import { fileURLToPath } from 'node:url';
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const defaultRoot = resolve(scriptDir, '..');
-
-export const STYLEGUIDE_PACKAGE = '@vitru/styleguide';
-export const TOKENS_FILE = 'node_modules/@vitru/styleguide/dist/tokens.css';
+const WEB_ROOT = join('apps', 'web');
+const GLOBALS_FILE = join(WEB_ROOT, 'src', 'styles', 'globals.css');
 export const ICON_LIBRARY = 'lucide-react';
-const LOCAL_DEPENDENCY_PROTOCOL = /^(?:file|link|workspace):/;
-
-/** Tokens de tema obrigatórios: renomeá-los quebra os componentes do template. */
 export const REQUIRED_THEME_TOKENS = [
-  '--ink',
-  '--ink-soft',
-  '--paper',
-  '--paper-2',
-  '--line',
-  '--accent',
-  '--navy',
-  '--navy-strong',
-  '--danger',
-  '--danger-line',
+  '--background',
+  '--foreground',
+  '--card',
+  '--card-foreground',
+  '--primary',
+  '--primary-foreground',
+  '--muted',
+  '--muted-foreground',
+  '--destructive',
   '--success',
-  '--field-bg',
-  '--field-border',
-  '--danger-bg',
-  '--danger-bg-hover',
-  '--week-today-bg',
-  '--week-today-fill',
-  '--on-accent',
-  '--shadow',
-  '--backdrop',
-  '--bar-edge',
-  '--event-ferias-bg',
-  '--event-ferias-ink',
-  '--event-viagem-bg',
-  '--event-viagem-ink',
-  '--event-evento-bg',
-  '--event-evento-ink',
-];
-
-/** Escalas compartilhadas por qualquer tema. */
-export const REQUIRED_SCALE_TOKENS = [
+  '--border',
+  '--ring',
   '--font-display',
   '--font-sans',
   '--font-mono',
-  '--text-md',
-  '--space-4',
-  '--radius-md',
-  '--transition-base',
-  '--icon-size',
 ];
-
-/** Kit base esperado no contrato público do pacote. */
-export const REQUIRED_COMPONENTS = [
-  'Alert',
-  'Badge',
-  'Button',
-  'Card',
-  'Dialog',
-  'EmptyState',
-  'ErrorBoundary',
-  'ErrorState',
-  'Input',
-  'LoadingState',
-  'PageHeader',
-  'Select',
-  'Table',
-  'Textarea',
-];
-
-/** Bibliotecas de ícones que competem com a padrão. */
+export const REQUIRED_COMPONENTS = ['alert.tsx', 'badge.tsx', 'button.tsx', 'button-variants.ts'];
 const FORBIDDEN_ICON_PACKAGES = [
   'react-icons',
   '@heroicons/react',
@@ -103,9 +39,6 @@ const FORBIDDEN_ICON_PACKAGES = [
   '@tabler/icons-react',
   'bootstrap-icons',
 ];
-
-// Cores literais em CSS. Nomes de cor cobrem só os mais comuns: a intenção é
-// pegar o descuido, não policiar o dicionário inteiro do CSS.
 const COLOR_PATTERNS = [
   /#[0-9a-fA-F]{3,8}\b/,
   /\brgba?\(/,
@@ -129,137 +62,137 @@ function normalized(path) {
   return path.split(sep).join('/');
 }
 
-/** Remove comentários para não acusar cor citada em explicação. */
 function withoutComments(css) {
   return css.replace(/\/\*[\s\S]*?\*\//g, '');
 }
 
-function checkTokens(root, warnings) {
-  const tokensPath = join(root, TOKENS_FILE);
-  if (!existsSync(tokensPath)) {
-    warnings.push(`${TOKENS_FILE}: tokens do pacote ausentes; instale "${STYLEGUIDE_PACKAGE}".`);
-  } else {
-    const tokens = withoutComments(readFileSync(tokensPath, 'utf8'));
-    for (const token of [...REQUIRED_THEME_TOKENS, ...REQUIRED_SCALE_TOKENS]) {
-      if (!new RegExp(`(?:^|[^-\\w])${token}\\s*:`, 'm').test(tokens)) {
-        warnings.push(`${TOKENS_FILE}: token obrigatório "${token}" não está declarado.`);
-      }
+function checkTheme(root, errors) {
+  const globalsPath = join(root, GLOBALS_FILE);
+  if (!existsSync(globalsPath)) {
+    errors.push(`${normalized(GLOBALS_FILE)}: tema global ausente.`);
+    return;
+  }
+  const globals = withoutComments(readFileSync(globalsPath, 'utf8'));
+  if (!globals.includes("@import 'tailwindcss'")) {
+    errors.push(`${normalized(GLOBALS_FILE)}: importe Tailwind uma única vez.`);
+  }
+  if (!globals.includes('@theme inline')) {
+    errors.push(`${normalized(GLOBALS_FILE)}: declare o mapeamento semântico em @theme inline.`);
+  }
+  for (const token of REQUIRED_THEME_TOKENS) {
+    if (!new RegExp(`(?:^|[^-\\w])${token}\\s*:`, 'm').test(globals)) {
+      errors.push(`${normalized(GLOBALS_FILE)}: token obrigatório "${token}" não está declarado.`);
     }
   }
 
-  const mainPath = join(root, 'src/main.tsx');
-  if (
-    !existsSync(mainPath) ||
-    !readFileSync(mainPath, 'utf8').includes('@vitru/styleguide/styles.css')
-  ) {
-    warnings.push('src/main.tsx: importe "@vitru/styleguide/styles.css" uma única vez.');
+  const mainPath = join(root, WEB_ROOT, 'src', 'main.tsx');
+  const main = existsSync(mainPath) ? readFileSync(mainPath, 'utf8') : '';
+  if (!main.includes('./styles/globals.css')) {
+    errors.push('apps/web/src/main.tsx: importe "./styles/globals.css" uma única vez.');
+  }
+  if (!main.includes('@fontsource-variable/archivo')) {
+    errors.push('apps/web/src/main.tsx: importe a fonte Archivo auto-hospedada.');
   }
 
-  const indexPath = join(root, 'index.html');
-  if (existsSync(indexPath) && !/<html[^>]*\sdata-theme=/.test(readFileSync(indexPath, 'utf8'))) {
-    warnings.push('index.html: declare o tema no <html> (ex.: data-theme="vitru").');
+  const indexPath = join(root, WEB_ROOT, 'index.html');
+  const html = existsSync(indexPath) ? readFileSync(indexPath, 'utf8') : '';
+  if (!/<html[^>]*\sdata-theme=["']poe-crafter["']/.test(html)) {
+    errors.push('apps/web/index.html: declare data-theme="poe-crafter".');
   }
 }
 
-function checkCssLiterals(root, warnings) {
-  const sourceRoot = join(root, 'src');
+function checkCss(root, errors) {
+  const sourceRoot = join(root, WEB_ROOT, 'src');
   for (const file of listFiles(sourceRoot, new Set(['.css']))) {
     const label = normalized(relative(root, file));
-    if (label === TOKENS_FILE) continue;
+    if (file.endsWith('.module.css')) {
+      errors.push(`${label}: CSS Modules foi substituído por Tailwind.`);
+    }
+    if (normalized(relative(root, file)) === normalized(GLOBALS_FILE)) continue;
     const lines = withoutComments(readFileSync(file, 'utf8')).split('\n');
     lines.forEach((line, index) => {
       if (COLOR_PATTERNS.some((pattern) => pattern.test(line))) {
-        warnings.push(
-          `${label}:${index + 1}: cor literal fora de tokens.css; use var(--token). -> ${line.trim()}`,
-        );
+        errors.push(`${label}:${index + 1}: cor literal fora do tema global.`);
       }
     });
   }
 }
 
-function checkIcons(root, warnings) {
-  const packagePath = join(root, 'package.json');
-  if (existsSync(packagePath)) {
-    const pkg = JSON.parse(readFileSync(packagePath, 'utf8'));
-    const dependencies = pkg.dependencies ?? {};
-    const styleguideVersion = dependencies[STYLEGUIDE_PACKAGE];
-    if (!styleguideVersion) {
-      warnings.push(`package.json: "${STYLEGUIDE_PACKAGE}" deve estar em dependencies.`);
-    } else if (LOCAL_DEPENDENCY_PROTOCOL.test(styleguideVersion)) {
-      warnings.push(
-        `package.json: "${STYLEGUIDE_PACKAGE}" deve usar uma versão publicada no npm, não "${styleguideVersion}".`,
-      );
-    }
-    if (!dependencies[ICON_LIBRARY]) {
-      warnings.push(`package.json: "${ICON_LIBRARY}" deve estar em dependencies.`);
-    }
-    for (const forbidden of FORBIDDEN_ICON_PACKAGES) {
-      if (dependencies[forbidden] || (pkg.devDependencies ?? {})[forbidden]) {
-        warnings.push(
-          `package.json: "${forbidden}" concorre com a biblioteca padrão "${ICON_LIBRARY}".`,
-        );
-      }
+function checkConfiguration(root, errors) {
+  const packagePath = join(root, WEB_ROOT, 'package.json');
+  if (!existsSync(packagePath)) {
+    errors.push('apps/web/package.json: manifesto web ausente.');
+    return;
+  }
+  const pkg = JSON.parse(readFileSync(packagePath, 'utf8'));
+  const dependencies = { ...(pkg.dependencies ?? {}), ...(pkg.devDependencies ?? {}) };
+  for (const required of [ICON_LIBRARY, 'tailwindcss', '@tailwindcss/vite', 'shadcn']) {
+    if (!dependencies[required]) errors.push(`apps/web/package.json: "${required}" é obrigatório.`);
+  }
+  if (dependencies['@vitru/styleguide']) {
+    errors.push('apps/web/package.json: remova o sistema visual legado "@vitru/styleguide".');
+  }
+  for (const forbidden of FORBIDDEN_ICON_PACKAGES) {
+    if (dependencies[forbidden]) {
+      errors.push(`apps/web/package.json: "${forbidden}" concorre com "${ICON_LIBRARY}".`);
     }
   }
 
-  const sourceRoot = join(root, 'src');
+  const configPath = join(root, WEB_ROOT, 'components.json');
+  if (!existsSync(configPath)) {
+    errors.push('apps/web/components.json: configuração shadcn/ui ausente.');
+  } else {
+    const config = JSON.parse(readFileSync(configPath, 'utf8'));
+    if (config.iconLibrary !== 'lucide')
+      errors.push('components.json: iconLibrary deve ser "lucide".');
+    if (config.tailwind?.baseColor !== 'neutral') {
+      errors.push('components.json: tailwind.baseColor deve ser "neutral".');
+    }
+    if (config.aliases?.ui !== '@/shared/ui') {
+      errors.push('components.json: aliases.ui deve apontar para "@/shared/ui".');
+    }
+  }
+
+  for (const component of REQUIRED_COMPONENTS) {
+    const path = join(root, WEB_ROOT, 'src', 'shared', 'ui', component);
+    if (!existsSync(path))
+      errors.push(`${normalized(relative(root, path))}: componente obrigatório ausente.`);
+  }
+}
+
+function checkIcons(root, errors) {
+  const sourceRoot = join(root, WEB_ROOT, 'src');
   for (const file of listFiles(sourceRoot, new Set(['.ts', '.tsx']))) {
     const label = normalized(relative(root, file));
     const content = readFileSync(file, 'utf8');
     for (const forbidden of FORBIDDEN_ICON_PACKAGES) {
       if (new RegExp(`from\\s+['"]${forbidden.replace(/[/@]/g, '\\$&')}`).test(content)) {
-        warnings.push(`${label}: importe ícones de "${ICON_LIBRARY}", não de "${forbidden}".`);
+        errors.push(`${label}: importe ícones de "${ICON_LIBRARY}", não de "${forbidden}".`);
       }
     }
   }
 }
 
-function checkKit(root, warnings) {
-  const indexPath = join(root, 'node_modules/@vitru/styleguide/dist/index.d.ts');
-  if (!existsSync(indexPath)) {
-    warnings.push(`${indexPath}: declarações públicas do kit ausentes.`);
-    return;
-  }
-  const index = readFileSync(indexPath, 'utf8');
-  for (const component of REQUIRED_COMPONENTS) {
-    if (!new RegExp(`\\b${component}\\b`).test(index)) {
-      warnings.push(
-        `${STYLEGUIDE_PACKAGE}: o kit base perdeu "${component}" (docs/styleguide.md).`,
-      );
-    }
-  }
-}
-
 export function checkStyleguide(root = defaultRoot) {
-  const warnings = [];
-  checkTokens(root, warnings);
-  checkCssLiterals(root, warnings);
-  checkIcons(root, warnings);
-  checkKit(root, warnings);
-  return warnings;
+  const errors = [];
+  checkTheme(root, errors);
+  checkCss(root, errors);
+  checkConfiguration(root, errors);
+  checkIcons(root, errors);
+  return errors;
 }
 
 function main() {
   const rootFlag = process.argv.indexOf('--root');
   const root = rootFlag >= 0 ? resolve(process.argv[rootFlag + 1]) : defaultRoot;
-  const strict = process.argv.includes('--strict');
-  const warnings = checkStyleguide(root);
-
-  if (warnings.length === 0) {
+  const errors = checkStyleguide(root);
+  if (errors.length === 0) {
     console.log('Verificação do styleguide OK.');
     return;
   }
-
-  const title = strict ? 'Verificação do styleguide FALHOU' : 'Avisos do styleguide';
-  console[strict ? 'error' : 'warn'](`${title}:\n`);
-  for (const warning of warnings) console[strict ? 'error' : 'warn'](`  - ${warning}`);
-  if (strict) {
-    process.exitCode = 1;
-    return;
-  }
-  console.warn(
-    `\n${warnings.length} aviso(s). Regras em docs/styleguide.md. Use --strict para falhar.`,
-  );
+  console.error('Verificação do styleguide FALHOU:\n');
+  for (const error of errors) console.error(`  - ${error}`);
+  process.exitCode = 1;
 }
 
 if (resolve(process.argv[1] ?? '') === fileURLToPath(import.meta.url)) main();

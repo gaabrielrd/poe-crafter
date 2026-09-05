@@ -1,40 +1,46 @@
-# Build & Deploy
+# Build e entrega
 
-O processo de build do template web é projetado para garantir que a aplicação possa ser entregue com confiabilidade, empacotando os assets de forma otimizada para produção.
+## Build local
 
-## Comandos Principais
+```bash
+pnpm build
+```
 
-- `npm run build`: Roda o ciclo de build completo, incluindo verificação de tipos, build com Vite e smoke test.
-- `npm run build:bundle`: Gera o bundle final via Vite (`vite build`).
-- `npm run smoke:build`: Inicia um servidor efêmero e valida se os artefatos em `dist/` renderizam adequadamente no navegador.
+O comando verifica tipos, compila `functions` e packages, gera
+`apps/web/dist` com Vite e executa um smoke HTTP sobre o artefato.
 
-## Variáveis de Ambiente
+## Instalação reproduzível
 
-O Vite utiliza variáveis de ambiente com o prefixo `VITE_` (ex: `VITE_API_URL`).
+```bash
+pnpm install --frozen-lockfile
+```
 
-- Durante o desenvolvimento, o Vite lê de arquivos `.env`, `.env.local`, etc.
-- No CI/CD, as variáveis devem ser passadas no momento do build (ex: `VITE_API_URL=https://api.exemplo.com npm run build`), para serem injetadas estaticamente na aplicação pelo Vite.
+O monorepo usa um `pnpm-lock.yaml`. Node 22.22.2 e pnpm 11.19.0 ficam alinhados
+entre `.nvmrc`, `packageManager`, engines e CI. `pnpm-workspace.yaml` permite
+scripts de build somente para `re2` e `protobufjs`, transitivos do Firebase CLI.
 
-Variáveis ausentes ou malformadas falham no boot da aplicação, com mensagem nomeando a variável — a validação fica em `src/shared/config/env.ts`. Isso vale também para o bundle de produção.
+## Variáveis de ambiente
+
+Variáveis web começam com `VITE_` e são públicas. A leitura ocorre apenas em
+`apps/web/src/shared/config/env.ts`. Passe valores no build sem registrar
+segredos no repositório.
 
 ## Integração contínua
 
-O workflow `.github/workflows/ci.yml` roda `npm ci` e `npm run validate` em Node
-22 e 24 a cada Pull Request, audita as dependências com
-`npm audit --audit-level=high` e executa o fluxo crítico no Chromium em jobs
-separados. Configure a branch principal para exigir os checks **Validate** e
-**E2E (Chromium)** antes do merge.
+`.github/workflows/ci.yml` possui três jobs em Node 22:
 
-Todos os jobs leem `packageManager` do `package.json`, instalam essa versão exata
-do npm e executam `npm run check:toolchain` antes de `npm ci`. Assim Node 22 e 24
-usam o mesmo resolvedor e a mesma interpretação do lockfile. Ao atualizar a
-toolchain, altere em conjunto `packageManager`, `.nvmrc`, `engines`, a matriz do
-CI e `package-lock.json`.
+- Validate: instalação congelada e `pnpm validate`.
+- Auditoria: `pnpm audit --audit-level=high`.
+- E2E: Chromium e `pnpm test:e2e`.
 
-## Smoke Test
+## Firebase Hosting
 
-O script `scripts/smoke-build.mjs` serve como um sanity check após o build. Ele sobe o bundle resultante (`dist/`) localmente, faz uma requisição para a raiz e verifica se o conteúdo base (como as tags do React ou conteúdo estático esperado) estão presentes. Se o smoke test falhar, a pipeline quebra, impedindo o deploy de um pacote com erro fatal.
+`firebase.json` aponta Hosting para `apps/web/dist` e reescreve rotas da SPA para
+`index.html`. Este marco não autoriza deploy nem fixa project IDs. Antes do
+primeiro deploy, crie plano próprio para ambientes, App Check, regras e rollback.
 
-O smoke HTTP não executa JavaScript. O comando `npm run test:e2e` complementa
-essa verificação iniciando o bundle em porta efêmera e exercitando o fluxo
-principal no Chromium.
+## Smoke e E2E
+
+`pnpm smoke:build` verifica `index.html` e todos os assets referenciados por HTTP.
+Ele não executa JavaScript. `pnpm test:e2e` complementa o smoke em navegador real
+e usa porta efêmera.
