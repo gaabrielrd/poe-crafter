@@ -1,6 +1,6 @@
 ---
 name: document-delivery
-description: Registra em docs/entregas a evidência do que foi entregue — funcionalidades, testes e validações executados; use depois de implementar um plano com implement-feature e com npm run validate verde.
+description: Registra em docs/entregas a evidência do que foi entregue — funcionalidades, testes e validações executados; use depois de implementar um plano com implement-feature e com pnpm validate verde.
 ---
 
 # Documentar entrega
@@ -21,12 +21,12 @@ resultado das validações executadas.
 - Para realinhar `docs/` ao código ou registrar ADR: use
   `update-documentation`.
 - Para avaliar a qualidade do diff: use `review-changes`.
-- Enquanto `npm run validate` não estiver verde: sem validação não há
+- Enquanto `pnpm validate` não estiver verde: sem validação não há
   evidência a registrar.
 
 ## Processo
 
-1. Confirme que a implementação terminou e que `npm run validate` passou.
+1. Confirme que a implementação terminou e que `pnpm validate` passou.
    Se algo estiver falhando, pare e corrija antes de documentar.
 2. Recupere o objetivo, o escopo e os critérios de aceite do plano de
    origem (`docs/tasks/…` ou o plano aprovado na conversa).
@@ -45,7 +45,7 @@ resultado das validações executadas.
    mesma entrega ganhar um incremento, acrescente uma seção datada ao
    arquivo existente.
 10. Não altere código nesta etapa; apenas o documento da entrega.
-11. Execute `npm run check:docs` para garantir que os links e os comandos
+11. Execute `pnpm check:docs` para garantir que os links e os comandos
     citados existem.
 
 ## Resultado esperado

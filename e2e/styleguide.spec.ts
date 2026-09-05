@@ -13,32 +13,22 @@ import { expect, test } from '@playwright/test';
  *    cada plataforma tem sua própria imagem de referência.
  */
 
-const screenshotName = 'styleguide.png';
-const baseline = join('e2e', '__screenshots__', process.platform, screenshotName);
-
 test('mantém o contrato de estilo do tema', async ({ page }) => {
   await page.goto('/styleguide');
 
   const root = page.locator('html');
-  await expect(root).toHaveAttribute('data-theme', 'vitru');
-  await expect(root).toHaveCSS('--accent', '#281352');
-  await expect(root).toHaveCSS('--danger', '#a11a2b');
-  await expect(root).toHaveCSS('--week-today-bg', '#ffc20e');
-  // Branco e preto viram #fff e #000 na minificação: compare o valor
-  // realmente aplicado, que não depende do bundler.
-  await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(255, 255, 255)');
-  await expect(page.locator('body')).toHaveCSS('color', 'rgb(0, 0, 0)');
+  await expect(root).toHaveAttribute('data-theme', 'poe-crafter');
+  await expect(root).toHaveCSS('--primary', '#c9a45d');
+  await expect(root).toHaveCSS('--destructive', '#b95757');
+  await expect(root).toHaveCSS('--success', '#66b795');
+  await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(14, 17, 22)');
+  await expect(page.locator('body')).toHaveCSS('color', 'rgb(244, 239, 227)');
 
   // Os componentes precisam consumir os tokens, não apenas declará-los.
   await expect(page.getByRole('button', { name: 'Ação primária' })).toHaveCSS(
     'background-color',
-    'rgb(40, 19, 82)',
+    'rgb(201, 164, 93)',
   );
-  await expect(page.getByRole('button', { name: 'Ação destrutiva' })).toHaveCSS(
-    'background-color',
-    'rgb(255, 245, 246)',
-  );
-  await expect(page.getByText('Informe um e-mail válido')).toHaveCSS('color', 'rgb(161, 26, 43)');
 
   // Fontes oficiais: título em TheMix, texto em Archivo. Se um arquivo sumir,
   // o navegador cai na fonte de reserva e isto acusa.
@@ -46,27 +36,41 @@ test('mantém o contrato de estilo do tema', async ({ page }) => {
     'font-family',
     /^TheMix/,
   );
-  await expect(page.locator('body')).toHaveCSS('font-family', /^Archivo/);
+  await expect(page.locator('body')).toHaveCSS('font-family', /^"?Archivo Variable/);
   const carregadas = await page.evaluate(async () => {
     await document.fonts.ready;
     return [...document.fonts].map((face) => `${face.family} ${face.weight} ${face.style}`);
   });
   expect(carregadas).toContain('TheMix 700 normal');
-  expect(carregadas).toContain('Archivo 400 normal');
+  expect(carregadas.some((font) => font.startsWith('Archivo Variable'))).toBe(true);
 });
 
-test('mantém a aparência da página do styleguide', async ({ page }) => {
-  // Sem referência para esta plataforma o teste é pulado com instrução, em vez
-  // de falhar por um arquivo que ninguém gerou ainda. `--update-snapshots`
-  // (npm run test:e2e:update) muda o modo e cria a imagem.
-  const criandoReferencia = test.info().config.updateSnapshots !== 'missing';
-  test.skip(
-    !existsSync(baseline) && !criandoReferencia,
-    `Sem imagem de referência para ${process.platform}. Gere com: npm run test:e2e:update`,
-  );
+const visualCases = [
+  { name: 'home-desktop.png', path: '/', width: 1280, height: 900 },
+  { name: 'styleguide-desktop.png', path: '/styleguide', width: 1280, height: 900 },
+  { name: 'not-found-desktop.png', path: '/rota-que-nao-existe', width: 1280, height: 900 },
+  { name: 'home-mobile.png', path: '/', width: 360, height: 760 },
+  { name: 'styleguide-mobile.png', path: '/styleguide', width: 360, height: 760 },
+  { name: 'not-found-mobile.png', path: '/rota-que-nao-existe', width: 360, height: 760 },
+];
 
-  await page.goto('/styleguide');
-  await page.waitForLoadState('networkidle');
+for (const visualCase of visualCases) {
+  test(`mantém a aparência de ${visualCase.name}`, async ({ page }) => {
+    const baseline = join('e2e', '__screenshots__', process.platform, visualCase.name);
+    // Sem referência para esta plataforma o teste é pulado com instrução. O
+    // modo `--update-snapshots` cria uma baseline que precisa de inspeção humana.
+    const criandoReferencia = test.info().config.updateSnapshots !== 'missing';
+    test.skip(
+      !existsSync(baseline) && !criandoReferencia,
+      `Sem imagem de referência para ${process.platform}. Gere com: pnpm test:e2e:update`,
+    );
 
-  await expect(page).toHaveScreenshot(screenshotName, { fullPage: true });
-});
+    await page.setViewportSize({ width: visualCase.width, height: visualCase.height });
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto(visualCase.path);
+    await page.waitForLoadState('networkidle');
+    await page.evaluate(() => document.fonts.ready);
+
+    await expect(page).toHaveScreenshot(visualCase.name, { fullPage: true });
+  });
+}

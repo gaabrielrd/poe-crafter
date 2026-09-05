@@ -3,19 +3,24 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
-import { checkToolchain, expectedNpmVersion } from './check-toolchain.mjs';
+import { checkToolchain, expectedNodeVersion, expectedPnpmVersion } from './check-toolchain.mjs';
 
-function project(packageManager = 'npm@10.6.0') {
-  const root = mkdtempSync(join(tmpdir(), 'web-toolchain-'));
+function project(packageManager = 'pnpm@11.19.0') {
+  const root = mkdtempSync(join(tmpdir(), 'poe-toolchain-'));
   writeFileSync(join(root, 'package.json'), JSON.stringify({ packageManager }));
+  writeFileSync(join(root, '.nvmrc'), '22.22.2\n');
   return root;
 }
 
 test('aceita a versão exata declarada em packageManager', () => {
   const root = project();
   try {
-    assert.equal(expectedNpmVersion(root), '10.6.0');
-    assert.equal(checkToolchain(root, 'npm/10.6.0 node/v22.0.0 darwin arm64'), '10.6.0');
+    assert.equal(expectedPnpmVersion(root), '11.19.0');
+    assert.equal(expectedNodeVersion(root), '22.22.2');
+    assert.equal(
+      checkToolchain(root, 'pnpm/11.19.0 npm/? node/v22.22.2 win32 x64', '22.22.2'),
+      '11.19.0',
+    );
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -25,18 +30,42 @@ test('rejeita versão diferente da declarada', () => {
   const root = project();
   try {
     assert.throws(
-      () => checkToolchain(root, 'npm/11.0.0 node/v24.0.0 linux x64'),
-      /esperado 10\.6\.0, encontrado 11\.0\.0/,
+      () => checkToolchain(root, 'pnpm/12.0.0 npm/? node/v22.22.2 linux x64', '22.22.2'),
+      /esperado 11\.19\.0, encontrado 12\.0\.0/,
     );
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
 });
 
-test('rejeita packageManager sem versão exata do npm', () => {
-  const root = project('npm@latest');
+test('rejeita packageManager sem versão exata do pnpm', () => {
+  const root = project('pnpm@latest');
   try {
-    assert.throws(() => expectedNpmVersion(root), /npm@x\.y\.z/);
+    assert.throws(() => expectedPnpmVersion(root), /pnpm@x\.y\.z/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('rejeita execução por outro gerenciador', () => {
+  const root = project();
+  try {
+    assert.throws(
+      () => checkToolchain(root, 'npm/10.6.0 node/v22.22.2', '22.22.2'),
+      /pnpm check:toolchain/,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('rejeita versão do Node diferente da .nvmrc', () => {
+  const root = project();
+  try {
+    assert.throws(
+      () => checkToolchain(root, 'pnpm/11.19.0 npm/? node/v24.14.1', '24.14.1'),
+      /esperado 22\.22\.2, encontrado 24\.14\.1/,
+    );
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

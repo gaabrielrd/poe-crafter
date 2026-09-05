@@ -1,101 +1,73 @@
 # Styleguide
 
-A base visual deste template vem do pacote `@vitru/styleguide`. A referência
-viva continua disponível em `/styleguide` e é renderizada pelo subpath
-`@vitru/styleguide/showcase`.
+A referência viva está em `/styleguide`. Tailwind fornece as utilidades e os
+componentes shadcn/ui ficam sob controle do projeto em
+`apps/web/src/shared/ui`.
 
-## Instalação e imports
+## Direção visual
 
-O pacote está em `dependencies`. O CSS público é importado uma única vez por
-`src/main.tsx`:
+A interface representa uma bancada de crafting escura, precisa e silenciosa.
+Hierarquia, legibilidade e estado operacional têm prioridade sobre decoração.
+Use uma única cor de destaque dourada e superfícies calmas.
 
-```tsx
-import '@vitru/styleguide/styles.css';
-```
+## Tokens
 
-Componentes são importados pelo entrypoint público:
+Cor, fonte, raio e motion vivem em
+`apps/web/src/styles/globals.css`. Componentes usam nomes semânticos como
+`bg-background`, `text-foreground`, `text-muted-foreground`, `border-border`,
+`bg-primary` e `text-destructive`.
 
-```tsx
-import { Button, Card, Input, PageHeader } from '@vitru/styleguide';
-```
+- Não escreva hex, RGB, HSL ou OKLCH em componente.
+- Não duplique um token com classe arbitrária.
+- Altere identidade visual no tema global.
+- Use TheMix apenas em títulos, peso 700.
+- Use Archivo no texto e Cascadia/Consolas para dados monoespaçados.
 
-O template instala a versão publicada no registro público do npm. Atualize a
-faixa semver em `package.json` e o lockfile para receber novas versões do kit;
-não use `file:`, `link:` ou `workspace:` no template distribuído.
+## Componentes
 
-## Regras
+- Use primeiro os componentes em `shared/ui`.
+- Adicione um componente shadcn somente quando uma tela real o exigir.
+- Mantenha `components.json` com aliases `@/shared/ui` e `@/shared/lib`.
+- Não crie `packages/ui` antes de existir um segundo consumidor.
+- Campos de formulário devem usar primitives locais de input/select/textarea
+  quando forem adicionadas.
+- Cards só existem quando o agrupamento ou a interação precisa de uma superfície.
 
-1. Cor, espaçamento, tipografia, raio, sombra e transição vêm dos tokens
-   expostos por `@vitru/styleguide/tokens.css`.
-2. CSS de componentes não declara cor literal.
-3. A biblioteca de ícones é `lucide-react`.
-4. Estilo de feature permanece em CSS Module próprio.
-5. Campos usam `Input`, `Textarea` ou `Select` do pacote.
-6. Toda tela com dados cobre carregando, vazio, erro e sucesso.
-7. Evoluções do kit acontecem no repositório `styleguide-vitru`, com teste e
-   atualização da referência visual.
+## Ícones
 
-## Tema e tokens
+Use somente `lucide-react`. O ícone deve melhorar reconhecimento ou estado e
+receber `aria-hidden="true"` quando o texto adjacente já fornece o nome.
 
-O tema padrão é `vitru`, aplicado por `data-theme="vitru"` no `<html>`. O pacote
-também fornece a paleta para `:root` sem atributo.
+## Layout e conteúdo
 
-Principais grupos:
+- Comece pela área de trabalho e por linguagem operacional.
+- Evite mosaico de cards, gradientes decorativos e texto promocional.
+- Preserve largura mínima de 360 px sem rolagem horizontal.
+- Use no máximo duas famílias tipográficas e um destaque dominante.
+- Títulos dizem o que a área é; texto de apoio explica escopo ou próxima ação.
 
-- cores: `--paper`, `--ink`, `--accent`, `--danger`, `--success` e superfícies;
-- tipografia: `--font-display`, `--font-sans`, tamanhos, pesos e entrelinhas;
-- espaçamento: `--space-1` a `--space-8`;
-- formas: raios, borda e elevações;
-- movimento, foco, ícones e largura de layout.
+## Estados e acessibilidade
 
-Consulte `/styleguide` ou o arquivo distribuído por
-`@vitru/styleguide/tokens.css` para o catálogo atual.
-
-## Fontes
-
-Archivo e sua licença OFL são distribuídas pelo pacote. TheMix é comercial: o
-pacote contém apenas o nome da família e fallbacks adequados para títulos, nunca
-os seus binários.
-
-Este template mantém os arquivos licenciados em `public/fonts` e as declarações
-locais em `src/styles/themix.css`. Em outro consumidor, copie os WOFF2 para
-`public`, `src/assets` ou diretório equivalente e execute:
-
-```bash
-npx vitru-install-themix
-```
-
-O comando encontra o CSS principal e adiciona um bloco `@font-face` idempotente.
-Use `--css=src/caminho.css` para indicar outro arquivo. Sem TheMix, os títulos
-caem para `Arial Narrow`, `Aptos Display`, `Roboto Condensed` e fontes do
-sistema.
-
-## Kit público
-
-O contrato atual inclui `PageHeader`, `Card`, `Button`, `Input`, `Textarea`,
-`Select`, `Table`, `Alert`, `Badge`, `Dialog`, `LoadingState`, `EmptyState`,
-`ErrorState` e `ErrorBoundary`.
-
-Uma ação primária por tela; ações destrutivas pedem confirmação. Alertas e
-etiquetas precisam transmitir significado por texto, não apenas por cor.
-
-## Acessibilidade
-
-- contraste mínimo AA;
-- foco visível preservado;
-- movimento reduzido respeitado;
-- ícones decorativos com `aria-hidden="true"`;
-- ícone sem texto exige nome acessível no controle.
+- Toda tela assíncrona cobre carregando, vazio, erro, sucesso e permissão quando
+  aplicável.
+- Mantenha contraste WCAG 2.2 AA, foco visível e alvos de toque adequados.
+- Elementos interativos devem funcionar por teclado.
+- Motion orienta entrada, foco ou affordance e respeita
+  `prefers-reduced-motion`.
+- Não confirme sucesso antes da persistência terminar.
 
 ## Verificação
 
 ```bash
-npm run check:styleguide
-npm run validate
-npm run test:e2e
+pnpm check:styleguide
 ```
 
-`check:styleguide` confirma a dependência e os exports do pacote, o import do
-CSS, os tokens obrigatórios, a biblioteca de ícones e a ausência de cores
-literais no código consumidor. O E2E protege o contrato computado e a regressão
-visual de `/styleguide`.
+O verificador exige Tailwind, shadcn, tokens, fontes, componentes mínimos e
+Lucide; também rejeita CSS Modules e o kit Vitru legado.
+
+```bash
+pnpm test:e2e
+```
+
+O E2E verifica os tokens computados, fontes locais, responsividade e aparência
+da página quando existe baseline para a plataforma.

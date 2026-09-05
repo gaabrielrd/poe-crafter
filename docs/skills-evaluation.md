@@ -83,7 +83,7 @@ O plano para a feature de filtro por categoria foi aprovado. Use a skill impleme
 - Lógica pura no model, I/O nos services, UI nos components
 - Reutilizou padrões e componentes existentes (`Button`, `shared/`)
 - Adicionou ou atualizou testes de comportamento
-- Executou `npm run validate` e passou limpo
+- Executou `pnpm validate` e passou limpo
 - Revisou o diff final e listou limitações conhecidas
 
 **Sinais de alerta**:
@@ -111,7 +111,7 @@ Use a skill generate-tests para adicionar testes à feature de filtro por catego
 - Testou o resultado observável, não detalhes internos de implementação
 - Cobriu casos de sucesso e de falha
 - Testes colocados dentro da pasta `tests/` da feature
-- Reutilizou utilitários existentes (`src/test/`)
+- Reutilizou utilitários existentes (`apps/web/src/test/`)
 - Não removeu nem enfraqueceu testes existentes
 - Suíte de testes passou por completo
 

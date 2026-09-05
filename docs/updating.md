@@ -1,62 +1,45 @@
-# Atualizando seu projeto
+# Atualização de toolchain e dependências
 
-Projetos derivados registram a versão de origem em
-`.template-state.json`. Atualizações compatíveis são distribuídas como migrações
-locais, sequenciais e transacionais no próprio repositório.
+O PoE Crafting Planner não recebe mais migrações de um template. Git preserva o
+histórico anterior, mas `setup`, `update:template` e `.template-state.json` foram
+aposentados no marco do monorepo.
 
-## Conferir uma atualização
+## Atualizar dependências
 
-Antes de alterar arquivos, liste as migrações aplicáveis:
+1. Crie uma branch.
+2. Leia changelogs de majors e integrações críticas.
+3. Atualize o manifesto do workspace consumidor.
+4. Gere o lockfile com pnpm.
+5. Revise novos scripts transitivos antes de alterar `allowBuilds`.
+6. Rode `pnpm validate` e `pnpm test:e2e`.
+7. Atualize ADRs e documentação quando o comportamento ou a arquitetura mudar.
 
-```bash
-npm run update:template -- --dry-run
-```
+Dependências internas usam `workspace:*` e não são publicadas no MVP.
 
-O comando mostra cada transição de versão e não escreve no projeto.
+## Atualizar Node ou pnpm
 
-## Aplicar uma atualização
+Altere em conjunto:
 
-Depois de revisar o plano:
+- `.nvmrc`;
+- `engines` da raiz e de Functions;
+- `packageManager`;
+- runtime em `firebase.json`;
+- workflow de CI;
+- `pnpm-lock.yaml`;
+- README e documentação de build.
 
-```bash
-npm run update:template
-npm run validate
-```
+Cloud Functions limita runtimes suportados. Não amplie a faixa local sem
+confirmar compatibilidade do backend e das dependências resolvidas.
 
-Migrações concluídas atualizam `templateVersion`. Repetir o comando não reaplica
-etapas já executadas. Se qualquer etapa falhar, todos os arquivos declarados
-pela migração são restaurados ao estado anterior.
+## Atualizar Tailwind ou shadcn/ui
 
-## Obter novas migrações
+Mantenha `components.json`, aliases e tokens globais coerentes. Componentes
+shadcn pertencem ao repositório: revise o diff gerado em vez de substituí-los às
+cegas. Confirme `/styleguide`, desktop, 360 px, teclado e reduced motion.
 
-O atualizador executa apenas migrações que já existem no checkout. Trazer uma
-nova versão do template continua sendo uma operação explícita de Git: consulte o
-changelog ou release correspondente, copie ou integre os arquivos do template em
-uma branch dedicada e então rode o dry-run.
+## Atualizar Firebase CLI
 
-Não use `--allow-unrelated-histories` como fluxo padrão. Projetos derivados
-podem ter mudanças incompatíveis, e conflitos devem ser resolvidos de forma
-consciente antes de executar as migrações.
-
-## Projetos criados antes do pacote compartilhado
-
-Para migrar um projeto que ainda mantém tokens e componentes locais:
-
-1. instale `@vitru/styleguide` pelo registro público do npm;
-2. importe `@vitru/styleguide/styles.css` uma vez no entrypoint;
-3. substitua imports do kit local por `@vitru/styleguide`;
-4. remova as cópias locais somente depois de testes e build verdes;
-5. mantenha arquivos licenciados da TheMix no consumidor e execute
-   `npx vitru-install-themix` se necessário;
-6. opcionalmente exponha `@vitru/styleguide/showcase` em `/styleguide`;
-7. rode `npm run check:styleguide`, `npm run validate` e o E2E.
-
-Veja a [ADR 0014](decisions/0014-extract-shared-styleguide-package.md).
-
-## Limites
-
-- O comando não baixa versões, não faz merge e não resolve conflitos.
-- Uma versão desconhecida falha com mensagem clara, sem alterar arquivos.
-- Migrações não podem sobrescrever código do usuário sem declarar o arquivo como
-  alvo e documentar a decisão.
-- Faça a atualização em uma branch e revise o diff antes do merge.
+Execute a atualização no manifesto raiz. Se surgirem scripts de build
+transitivos, não os aprove automaticamente: identifique o pacote, a origem e a
+necessidade. Emuladores devem continuar usando `demo-poe-crafter` e regras
+deny-all até uma feature autorizá-las.

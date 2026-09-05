@@ -8,6 +8,18 @@ import ts from 'typescript';
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const defaultRoot = resolve(scriptDir, '..');
 const sourceExtensions = new Set(['.ts', '.tsx']);
+const INTERNAL_PACKAGES = new Set([
+  '@poe-crafter/shared-types',
+  '@poe-crafter/poe-data',
+  '@poe-crafter/functions',
+  '@poe-crafter/web',
+]);
+const ALLOWED_INTERNAL_IMPORTS = {
+  web: new Set(['@poe-crafter/shared-types']),
+  functions: new Set(['@poe-crafter/shared-types', '@poe-crafter/poe-data']),
+  'shared-types': new Set(),
+  'poe-data': new Set(['@poe-crafter/shared-types']),
+};
 
 function listSourceFiles(directory) {
   if (!existsSync(directory)) return [];
@@ -37,8 +49,7 @@ function targetFromSpecifier(sourceFile, specifier, sourceRoot) {
 
 function isPublicFeatureImport(specifier, targetPath) {
   if (/^@\/features\/[^/]+$/.test(specifier)) return true;
-  const target = normalized(targetPath);
-  return /\/features\/[^/]+(?:\/index)?$/.test(target);
+  return /\/features\/[^/]+(?:\/index)?$/.test(normalized(targetPath));
 }
 
 function parseSourceFile(sourceFile, content) {
@@ -138,18 +149,38 @@ function boundaryViolations(source, sourceRelative) {
   return [...violations];
 }
 
-export function checkArchitecture(root = defaultRoot) {
-  const sourceRoot = join(root, 'src');
-  const errors = [];
+function internalPackageName(specifier) {
+  if (!specifier.startsWith('@poe-crafter/')) return null;
+  return specifier.split('/').slice(0, 2).join('/');
+}
 
+function checkWorkspaceImports(source, sourceLabel, workspace) {
+  const errors = [];
+  const allowed = ALLOWED_INTERNAL_IMPORTS[workspace] ?? new Set();
+  for (const specifier of moduleSpecifiers(source)) {
+    const packageName = internalPackageName(specifier);
+    if (!packageName || !INTERNAL_PACKAGES.has(packageName)) continue;
+    if (specifier !== packageName) {
+      errors.push(`${sourceLabel}: importe "${packageName}" apenas por sua API pública.`);
+      continue;
+    }
+    if (!allowed.has(packageName)) {
+      errors.push(`${sourceLabel}: o workspace "${workspace}" não pode importar "${packageName}".`);
+    }
+  }
+  return errors;
+}
+
+function checkWeb(root, errors) {
+  const sourceRoot = join(root, 'apps', 'web', 'src');
   for (const sourceFile of listSourceFiles(sourceRoot)) {
     const sourceRelative = normalized(relative(sourceRoot, sourceFile));
     const sourceFeature = featureFromPath(sourceRelative);
     const sourceIsShared = sourceRelative.startsWith('shared/');
-    const content = readFileSync(sourceFile, 'utf8');
-    const source = parseSourceFile(sourceFile, content);
+    const source = parseSourceFile(sourceFile, readFileSync(sourceFile, 'utf8'));
 
     errors.push(...boundaryViolations(source, sourceRelative));
+    errors.push(...checkWorkspaceImports(source, `apps/web/src/${sourceRelative}`, 'web'));
 
     for (const specifier of moduleSpecifiers(source)) {
       const targetPath = targetFromSpecifier(sourceFile, specifier, sourceRoot);
@@ -161,7 +192,6 @@ export function checkArchitecture(root = defaultRoot) {
         errors.push(`${sourceRelative}: shared não pode importar a feature "${targetFeature}".`);
         continue;
       }
-
       if (
         targetFeature &&
         targetFeature !== sourceFeature &&
@@ -173,7 +203,23 @@ export function checkArchitecture(root = defaultRoot) {
       }
     }
   }
+}
 
+function checkWorkspace(root, sourceDirectory, workspace, errors) {
+  const sourceRoot = join(root, sourceDirectory);
+  for (const sourceFile of listSourceFiles(sourceRoot)) {
+    const label = normalized(relative(root, sourceFile));
+    const source = parseSourceFile(sourceFile, readFileSync(sourceFile, 'utf8'));
+    errors.push(...checkWorkspaceImports(source, label, workspace));
+  }
+}
+
+export function checkArchitecture(root = defaultRoot) {
+  const errors = [];
+  checkWeb(root, errors);
+  checkWorkspace(root, 'functions/src', 'functions', errors);
+  checkWorkspace(root, 'packages/shared-types/src', 'shared-types', errors);
+  checkWorkspace(root, 'packages/poe-data/src', 'poe-data', errors);
   return errors;
 }
 

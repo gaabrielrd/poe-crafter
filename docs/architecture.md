@@ -1,144 +1,271 @@
 # Arquitetura
 
-Este documento descreve como o código do `web-project-template` é organizado e as regras que mantêm o projeto simples e sustentável.
+Este documento descreve a estrutura implementada do PoE Crafting Planner e as
+fronteiras aprovadas para sua evolução. O [PRD](prd.md) define o produto; este
+arquivo define onde cada responsabilidade deve viver.
 
 ## Princípios
 
-- Organização por funcionalidades (features), não por camadas técnicas.
-- Cada parte tem uma responsabilidade clara.
-- Simplicidade primeiro: só adicione abstração quando houver necessidade real.
-- Regra de negócio fica nas features; a base (`app` e `shared`) permanece neutra.
+- Organizar capacidades por feature e regras reutilizáveis por package.
+- Manter React, Firebase e integrações externas fora do domínio determinístico.
+- Expor uma API pública por feature/package e impedir imports de internals.
+- Criar módulos somente quando existir um consumidor real.
+- Tratar dados de providers como entrada não confiável, atrás de adaptadores.
+- Preservar planos, datasets e snapshots publicados como artefatos imutáveis.
+- Desenvolver contra emuladores e negar acesso a dados por padrão.
 
-## Documentos de produto e arquitetura
+## Estrutura atual
 
-Ao iniciar um aplicativo a partir do template, use a skill `plan-app` para conduzir a descoberta antes de implementar. Ela cria `docs/prd.md` com o problema, os usuários, o escopo, o não escopo, os requisitos e os critérios de aceite aprovados.
-
-Este arquivo continua sendo a fonte das decisões técnicas. A `plan-app` deve preservar as regras do template e acrescentar uma seção `Decisões do produto` com o limite do sistema, o mapa de features, o fluxo de dados, a persistência, as integrações e os trade-offs definidos para o aplicativo. O PRD explica **o que e por que** construir; a arquitetura explica **como o sistema será organizado**.
-
-## Árvore de pastas
-
+```text
+poe-crafter/
+├── apps/
+│   └── web/
+│       ├── public/
+│       ├── src/
+│       │   ├── app/          # layout, rotas, fallbacks e styleguide
+│       │   ├── features/     # capacidades da experiência web
+│       │   ├── shared/       # config, utilitários e UI neutra
+│       │   ├── styles/       # Tailwind, tokens e fontes
+│       │   └── test/         # setup e render compartilhado
+│       ├── components.json
+│       ├── vite.config.ts
+│       └── vitest.config.ts
+├── functions/
+│   └── src/index.ts          # limite do backend, sem handlers ainda
+├── packages/
+│   ├── shared-types/         # contratos serializáveis
+│   └── poe-data/             # futuro adaptador RePoE
+├── e2e/
+├── scripts/
+├── docs/
+├── firebase.json
+├── firestore.rules
+├── storage.rules
+└── pnpm-workspace.yaml
 ```
-src/
-├── app/          # composição geral: providers, rotas, layout — sem regra de negócio
-│   ├── components/  # telas de erro e não encontrado usadas pelas rotas
-│   ├── routes/      # definição das rotas e o router
-│   └── tests/       # smoke test da composição
-├── features/     # cada capacidade do produto em sua própria pasta
-│   └── notes/    # demonstração canônica; removida por --remove-example
-├── shared/       # reutilizável e neutro: config, hooks, lib, types
-├── test/         # setup.ts e render.tsx (utilidades de teste)
-└── main.tsx      # ponto de entrada da aplicação
+
+O workspace usa pnpm e um lockfile compartilhado. A raiz contém orquestração,
+qualidade, E2E e configuração Firebase; código executável pertence a um
+workspace.
+
+## Workspaces e dependências
+
+Dependências internas usam `workspace:*`. As permissões atuais são:
+
+```text
+apps/web ───────────────> @poe-crafter/shared-types
+functions ──────────────> @poe-crafter/shared-types
+functions ──────────────> @poe-crafter/poe-data
+@poe-crafter/poe-data ──> @poe-crafter/shared-types
 ```
 
-Uma feature típica:
+Uma seta é permissão, não obrigação. O manifesto só declara a dependência quando
+o código a usa. O sentido inverso, ciclos e imports de subpaths internos falham
+em `pnpm check:architecture`.
 
-```
+`crafting-engine`, `planner`, `simulator` e `pricing` permanecem na arquitetura
+aprovada, mas serão criados com seu primeiro consumidor. Não existem pastas ou
+contratos fictícios para esses módulos.
+
+## Aplicação web
+
+`apps/web` usa React, TypeScript, Vite, React Router, Tailwind e componentes
+shadcn/ui possuídos pelo projeto.
+
+### Features
+
+Uma feature típica segue:
+
+```text
 features/minha-feature/
-├── components/   # componentes de tela desta feature
-├── model/        # tipos e lógica de negócio
-├── services/     # acesso a APIs e persistência
-├── tests/        # testes desta feature
-└── index.ts      # interface pública da feature
+├── components/   # apresentação e composição do fluxo
+├── model/        # estado e validação próprios da experiência
+├── services/     # APIs e orquestração de infraestrutura
+├── adapters/     # tradução de contratos externos
+├── repositories/ # persistência
+├── tests/        # comportamento observável
+└── index.ts      # única interface pública
 ```
 
-## Responsabilidades
+Regras:
 
-- **app/**: monta a aplicação. Providers, rotas e layout. Não contém regra de negócio.
-- **features/**: cada capacidade do produto (ex.: "cadastro de clientes"). Reúne tudo que aquela funcionalidade precisa.
-- **shared/**: peças reutilizáveis e neutras (botões, hooks genéricos, utilitários, estilos, tipos). Não conhece nenhuma feature específica.
-- **test/**: configuração e utilitários compartilhados de teste.
+1. Uma feature não importa arquivos internos de outra.
+2. `shared` não depende de features nem contém conceitos de crafting.
+3. Componentes não chamam `fetch`, Firebase ou armazenamento diretamente.
+4. `fetch` e armazenamento ficam em `services`, `adapters` ou `repositories`.
+5. `import.meta.env` só é lido em `shared/config/env.ts`.
+6. Estado assíncrono de tela cobre carregando, vazio, erro, sucesso e, quando
+   aplicável, sem permissão.
+7. Não existe gerenciador global de estado aprovado.
 
-## Regras de dependência
+### Rotas
 
-1. Cada funcionalidade tem sua própria pasta em `features/`.
-2. Uma feature não importa arquivos internos de outra feature.
-3. Uma feature expõe sua interface pública pelo `index.ts`.
-4. Chamadas HTTP ficam em serviços/clientes, não nos componentes.
-5. Acesso a `localStorage` fica em adaptadores/repositórios.
-6. Componentes de apresentação não conhecem detalhes de persistência.
-7. `shared` é neutro: não depende de nenhuma feature.
-8. Não crie abstrações sem necessidade concreta.
-9. Sem gerenciador global de estado por padrão.
-10. Sem biblioteca de requisições se `fetch` já resolve.
-11. Nenhuma credencial no código.
-12. Estados de tela explícitos: carregando, vazio, sucesso e erro.
-13. Toda mudança de comportamento considera os testes.
-14. Toda decisão relevante atualiza a documentação ou gera um ADR.
-15. Imports externos usam apenas o `index.ts` da feature; `npm run check:architecture` verifica essa fronteira.
-16. `fetch` e armazenamento do navegador só aparecem em `services/`,
-    `adapters/` ou `repositories/`, dentro de uma feature ou de `shared`.
-17. `import.meta.env` só aparece em `shared/config/env.ts`.
+Rotas ficam em `apps/web/src/app/routes` e importam de `react-router`, nunca de
+`react-router-dom`. A árvore exportada pode ser montada com memory router nos
+testes.
 
-## Acesso a APIs
+Estado atual:
 
-Todo acesso a APIs passa por `services/`, `adapters/` ou `repositories/` dentro
-da feature. Uma infraestrutura neutra e realmente compartilhada pode usar as
-mesmas pastas dentro de `shared`. Os componentes chamam essa fronteira; nunca
-fazem `fetch` diretamente. Isso concentra o tratamento de erros e facilita
-substituir a fonte por dados fake nos testes. Veja [integrations.md](integrations.md).
+- `/`: home estrutural.
+- `/styleguide`: contrato visual vivo.
+- `*`: página não encontrada, sempre por último.
+- `errorElement`: fallback de carregamento/renderização sem tela branca.
 
-## Armazenamento
+Rotas de produto planejadas: `/new`, `/craft/:craftId`,
+`/craft/:craftId/summary`, `/history`, `/settings` e `/admin`. Elas só entram com
+suas respectivas features.
 
-Persistência local (ex.: `localStorage`) fica isolada em `services/`,
-`adapters/` ou `repositories/`. Dados lidos na fronteira são validados antes de
-entrar no modelo. O exemplo de notas grava um envelope versionado com revisão
-monotônica, migra automaticamente o array legado, preserva dados inválidos em
-uma chave de backup e rejeita gravações feitas sobre uma revisão antiga. Eventos
-de `storage` sincronizam abas abertas. Falhas de leitura, conflito e escrita têm
-códigos estáveis e são apresentadas pela interface; uma operação nunca confirma
-sucesso antes da persistência terminar.
+### Sistema visual
 
-A orquestração da lista demonstrativa fica em um hook interno da feature. O
-componente `NoteList` cuida da composição visual e semântica, enquanto o hook
-coordena validação, revisões e sincronização sem expor detalhes pela interface
-pública da feature.
+O tema vive em `apps/web/src/styles/globals.css`:
 
-Novas versões do formato persistido devem ter migração explícita e teste do formato anterior. Nunca apague silenciosamente dados que não puderem ser interpretados.
+- Tailwind é integrado por `@tailwindcss/vite`.
+- `components.json` aponta shadcn para `src/shared/ui` e utilitários para
+  `src/shared/lib`.
+- Primitives usam Radix e ícones usam `lucide-react`.
+- Cor, tipografia, raio e movimento usam tokens semânticos.
+- TheMix e Archivo são auto-hospedadas; não há CDN.
+- Não existem CSS Modules nem dependência de `@vitru/styleguide`.
+- Não existe `packages/ui` enquanto apenas a web consumir componentes.
 
-## Rotas e falhas
+A rota `/styleguide` demonstra apenas os tokens e componentes instalados. As
+regras detalhadas ficam em [styleguide.md](styleguide.md).
 
-As rotas ficam em `app/routes`, que exporta `routes` (a árvore, montável com `createMemoryRouter` nos testes) e `router` (o router de produção). Importe sempre de `react-router`.
+## Backend Firebase
 
-A rota raiz registra um `errorElement`, então um erro de renderização no layout ou em qualquer rota filha vira uma tela de falha, nunca tela branca. Uma rota curinga (`path: '*'`) atende endereços desconhecidos dentro do layout — mantenha-a como último filho ao acrescentar rotas.
+`functions` é um workspace TypeScript privado, preparado para Cloud Functions
+2nd gen em Node 22. No marco atual seu `index.ts` não publica handlers. O SDK
+Firebase entra quando a primeira API real for planejada.
 
-O `ErrorBoundary` de `@vitru/styleguide` não envolve o `<Outlet />`, para não sombrear o `errorElement`. Use-o para isolar um widget arriscado dentro de uma página.
+Futuras responsabilidades:
 
-## Configuração de ambiente
+- `functions/src/api`: autenticação, App Check, autorização e validação de
+  payload antes de chamar packages.
+- `functions/src/tasks`: jobs idempotentes de parsing, planejamento e simulação.
+- `functions/src/scheduled`: importações e manutenção programadas.
 
-Toda leitura de `import.meta.env` passa por `shared/config/env.ts`. As variáveis são declaradas em `ImportMetaEnv` (`src/vite-env.d.ts`) e validadas no boot: ausência ou formato inválido falha imediatamente, nomeando a variável. Nada que chegue ao browser é secreto.
+Handlers não contêm regra de crafting e não publicam resultado parcial. Segredos
+existem apenas no backend.
 
-## Estilo e identidade visual
+`firebase.json` configura Hosting, Functions, Firestore, Storage e Emulator
+Suite. O desenvolvimento usa `demo-poe-crafter`; `.firebaserc` pessoal é ignorado
+e nenhum project ID real é versionado. Firestore e Storage começam deny-all.
 
-Estilização por CSS Modules ([ADR 0005](decisions/0005-css-modules.md)), com os
-valores fornecidos por `@vitru/styleguide/tokens.css`
-([ADR 0011](decisions/0011-design-tokens-and-styleguide.md)). Cor, tipografia,
-espaçamento, raio, sombra e movimento vêm de tokens; nenhum CSS de componente
-declara cor literal. Archivo vem do pacote; os arquivos licenciados da TheMix
-ficam apenas no projeto consumidor, em `public/fonts/`
-([ADR 0013](decisions/0013-official-fonts.md)). O tema padrão é `vitru`, aplicado pelo atributo
-`data-theme` no `index.html`.
+## Packages de domínio
 
-As telas são montadas com o kit de `@vitru/styleguide` (cabeçalho, blocos,
-campos, tabela, avisos, modal e os estados de carregando, vazio e erro), que já
-consome os tokens e traz a semântica de acessibilidade esperada
-([ADR 0012](decisions/0012-component-kit-and-visual-guardrails.md)). O subpath
-`@vitru/styleguide/showcase` renderiza tokens e kit em `/styleguide` e serve de
-referência viva para pessoas e agentes. Ícones vêm de `lucide-react`. As regras
-completas estão em [styleguide.md](styleguide.md) e `npm run check:styleguide`
-avisa quando são quebradas.
+### `shared-types`
 
-## Estado
+Contratos serializáveis compartilhados. Não depende de React, Firebase, Node,
+providers externos ou outro package interno.
 
-O estado é local aos componentes ou às features. Não usamos gerenciador global de estado por padrão. Se, no futuro, a complexidade justificar, a decisão deve ser registrada em um ADR.
+### `poe-data`
 
-## Testes
+Adaptará e normalizará RePoE para schemas próprios. Pode depender de
+`shared-types`; não pode expor o schema externo como contrato público.
 
-Os testes ficam colocalizados dentro da feature, na pasta `tests/`. Testam o
-comportamento observável da funcionalidade. Os scripts de arquitetura usam a AST
-do TypeScript para cobrir imports estáticos, reexports, imports dinâmicos e o uso
-de `fetch`, `localStorage` e `import.meta.env` fora das fronteiras permitidas.
-Detalhes em [testing.md](testing.md).
+### `crafting-engine` (planejado)
+
+Autoridade determinística sobre estados, operações e transições. Não dependerá
+de planner, simulator, Firebase ou providers.
+
+### `simulator` (planejado)
+
+Medirá distribuições e métricas de candidatos. Não decide se uma operação é
+legal.
+
+### `planner` (planejado)
+
+Buscará e comparará estratégias usando engine, simulator, game data e snapshots
+de preços. Todo candidato volta ao engine antes de ser publicado.
+
+### `pricing` (planejado)
+
+Normalizará poe.ninja e overrides manuais em chaos, sem ser fonte de regras de
+crafting.
+
+## Fluxo de produto aprovado
+
+```text
+Texto ou screenshot
+  -> API de parsing
+  -> alvo normalizado
+  -> confirmação do jogador
+  -> crafting-engine
+  -> CraftSession + PlanningJob
+  -> fila de planejamento
+  -> busca e simulação
+  -> validação final pelo engine
+  -> plano imutável + snapshots
+  -> execução append-only
+  -> resumo estimado versus real
+```
+
+O screenshot ficará no Storage por no máximo 24 horas. Cloud Vision produzirá
+texto não confiável, processado pelo mesmo parser do texto colado e sempre
+confirmado pelo jogador. Após 1.000 OCRs no mês, o produto mantém somente texto.
+
+## Game data e preços
+
+O pipeline RePoE deve baixar, adaptar, validar, indexar, testar e publicar uma
+versão imutável antes de trocar atomicamente o ponteiro ativo. Rollback reativa
+uma versão; não altera planos existentes.
+
+O job diário de preços publica snapshot imutável do poe.ninja. O planner nunca
+consulta o provider durante uma busca. Falha mantém o último snapshot com
+horário visível; sem snapshot, regras funcionam e o custo automático fica
+indisponível.
+
+APIs da GGG não fazem parte do sistema.
+
+## Estado e consistência
+
+- Firestore guarda estado durável; Storage guarda uploads temporários e
+  artefatos versionados.
+- Estado transitório de formulário/navegação pertence à feature ou à URL.
+- Planos, datasets e snapshots publicados são imutáveis.
+- Execução é append-only; retries e restarts acrescentam eventos.
+- Recalcular cria outra versão e preserva a anterior.
+- O navegador só altera campos do usuário; custos, probabilidades e versões
+  calculadas são autoritativos no backend.
+
+## Acesso e operação
+
+- A sessão começa anônima e pode ser vinculada somente ao Google.
+- Crafts são privados e não têm links públicos no MVP.
+- Sessões anônimas inativas são excluídas após 30 dias.
+- Exclusão de conta Google termina em até 24 horas.
+- Administradores são UIDs Google autorizados manualmente.
+- Conteúdo aberto para suporte exige autorização e auditoria.
+- Ao se aproximar de US$10/mês, novos OCRs e depois novos jobs são bloqueados;
+  leitura do histórico continua disponível.
+
+## Build e distribuição
+
+- A SPA gera `apps/web/dist` e será publicada pelo Firebase Hosting.
+- Functions, regras e Hosting usam projetos separados de desenvolvimento,
+  staging e produção.
+- Packages TypeScript geram `dist` e declarações, testáveis sem Firebase.
+- O produto não é PWA e não promete uso offline.
+- Suporte: duas versões recentes de Chrome, Edge, Firefox e Safari; Chrome e
+  Safari móveis; largura mínima de 360 px.
+
+## Qualidade
+
+`pnpm validate` é o gate local único. Ele verifica toolchain, workspace, skills,
+arquitetura, docs, styleguide, Firebase, formato, lint, cobertura, tipos, builds e
+smoke HTTP. `pnpm test:e2e` valida o bundle separadamente no Chromium.
+
+Metas do produto:
+
+- Todo plano passa pelo engine; abrangência não supera legalidade.
+- 90% dos jobs terminam em até 60 segundos e falham recuperavelmente aos cinco
+  minutos.
+- Interface WCAG 2.2 AA.
+- No percentil 75: LCP até 2,5 s, INP até 200 ms e CLS até 0,1.
+- Custo operacional do piloto até US$10/mês.
 
 ## Evolução incremental
 
-O template começa simples de propósito. Adicione estrutura, bibliotecas ou camadas apenas quando um problema real aparecer, e registre a mudança em um ADR (`docs/decisions/`).
+O marco estrutural está implementado. A próxima capacidade deve começar por um
+plano específico para importação de item por texto, sem antecipar OCR, planner ou
+autenticação. Toda decisão relevante gera ou atualiza ADR em `docs/decisions`.

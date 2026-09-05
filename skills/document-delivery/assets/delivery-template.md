@@ -20,9 +20,9 @@ O que esta entrega resolve e para quem, em uma ou duas frases.
 
 ## Arquivos alterados
 
-| Arquivo                         | Mudança                        |
-| ------------------------------- | ------------------------------ |
-| `src/features/exemplo/index.ts` | Exporta a nova funcionalidade. |
+| Arquivo                                  | Mudança                        |
+| ---------------------------------------- | ------------------------------ |
+| `apps/web/src/features/exemplo/index.ts` | Exporta a nova funcionalidade. |
 
 ## Testes
 
@@ -38,10 +38,10 @@ Cole aqui a saída real da execução dos testes.
 
 ## Validações executadas
 
-| Comando                    | Resultado |
-| -------------------------- | --------- |
-| `npm run validate`         | Verde     |
-| `npm run check:styleguide` | Verde     |
+| Comando                 | Resultado |
+| ----------------------- | --------- |
+| `pnpm validate`         | Verde     |
+| `pnpm check:styleguide` | Verde     |
 
 ```text
 Cole aqui a saída real das validações.

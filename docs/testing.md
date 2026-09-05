@@ -1,130 +1,81 @@
 # Testes
 
-## Filosofia
+Teste resultados observáveis e contratos arquiteturais. Não teste detalhes
+internos apenas para aumentar cobertura.
 
-Testamos o **comportamento observável** da aplicação: o que o usuário vê e faz. Não testamos detalhes internos de implementação. Um bom teste continua passando mesmo que você reorganize o código por dentro, desde que o comportamento continue o mesmo.
+## Camadas
 
-## Tipos de teste
-
-- **Unidade**: funções e lógica isoladas (ex.: cálculo, formatação).
-- **Componente**: renderização e interação de componentes, com Vitest + React Testing Library.
-- **Contrato local**: setup transacional, regras arquiteturais, links da documentação e artefato de build.
-- **E2E**: fluxo crítico no Chromium contra o bundle de produção, com
-  Playwright.
-- **Identidade visual**: contrato de estilo (valores computados dos tokens) e
-  regressão visual da página `/styleguide`.
-
-## Localização
-
-Os testes ficam dentro da feature, na pasta `tests/`:
-
-```
-features/minha-feature/
-├── components/
-├── model/
-├── services/
-└── tests/        # os testes desta feature
-```
+| Camada                   | Local                     | Responsabilidade                                                     |
+| ------------------------ | ------------------------- | -------------------------------------------------------------------- |
+| Unidade/componente web   | `apps/web/src/**/tests`   | Rotas, componentes, estado e configuração pelo comportamento         |
+| Contratos do repositório | `scripts/*.test.mjs`      | Arquitetura, docs, toolchain, Firebase, styleguide, gerador e bundle |
+| Packages                 | `packages/*/src/**/tests` | Regras puras quando houver comportamento                             |
+| Functions                | `functions/src/**/tests`  | Validação e handlers quando forem implementados                      |
+| E2E                      | `e2e`                     | Bundle, navegação, responsividade e contrato visual no Chromium      |
 
 ## Comandos
 
 ```bash
-npm run test          # roda os testes uma vez, com limites de cobertura
-npm run test:unit     # roda apenas Vitest, sem cobertura (mais rápido)
-npm run test:coverage # roda Vitest aplicando os limites de cobertura
-npm run test:setup    # testa setup e regras arquiteturais em projetos temporários
-npm run test:e2e      # testa o fluxo crítico em um navegador Chromium real
-npm run test:e2e:update # regera as imagens de referência do styleguide
-npm run test:watch    # roda em modo contínuo enquanto você edita
+pnpm test:unit
 ```
 
-Antes da primeira execução local do E2E, instale o navegador compatível com a
-versão do Playwright:
+Vitest web sem cobertura, indicado para iteração.
 
 ```bash
-npx playwright install chromium
+pnpm test
 ```
 
-O E2E escolhe uma porta efêmera, gera o bundle e serve a aplicação localmente.
-
-## Identidade visual
-
-`e2e/styleguide.spec.ts` protege o styleguide em duas camadas:
-
-1. **Contrato de estilo**: compara os valores realmente aplicados (`--accent`,
-   `--danger`, cor de fundo do botão primário, cor da mensagem de erro). É
-   determinístico em qualquer sistema operacional e a falha diz exatamente qual
-   valor mudou. Roda sempre, inclusive no CI.
-2. **Regressão visual**: compara a página `/styleguide` inteira, pixel a pixel,
-   com a imagem em `e2e/__screenshots__/<plataforma>/`. Pega mudanças de
-   layout e espaçamento que o contrato não vê.
-
-A fonte do sistema muda o resultado, então cada plataforma tem sua própria
-imagem. Quando não existe imagem para a plataforma atual (por exemplo, no Linux
-do CI antes de alguém gerar a primeira), o teste é **pulado** com a instrução,
-em vez de falhar.
-
-Depois de uma mudança visual **intencional**, regere e revise a imagem no diff
-do pull request:
+Cobertura web e contratos Node.
 
 ```bash
-npm run test:e2e:update
+pnpm test:e2e
 ```
 
-Se a imagem mudou sem que ninguém tenha mexido no visual, é regressão: veja o
-comparativo em `test-results/` antes de aceitar.
-Ele não depende de rede externa nem de dados preexistentes. O CI instala também
-as dependências de sistema do Chromium e publica trace e screenshot apenas em
-caso de falha.
+Build, preview em porta efêmera e fluxos Chromium.
+
+```bash
+pnpm test:emulators
+```
+
+Build, Hosting local e requisições não autenticadas que precisam receber 403
+do Firestore e do Storage. Requer Java 21 ou mais recente.
+
+```bash
+pnpm validate
+```
+
+Gate completo, exceto instalação/execução do navegador.
 
 ## Cobertura
 
-`npm run test` aplica limites mínimos definidos em `vitest.config.ts`: 85% de instruções e linhas, 75% de ramos e 90% de funções. Uma queda abaixo disso falha o `validate` e o CI.
+O Vitest aplica os pisos atuais:
 
-Os limites existem para impedir regressão, não para virar meta. Não escreva teste de caso impossível só para subir o número — se um trecho é difícil de cobrir, normalmente ele está pedindo para ser simplificado. O relatório HTML fica em `coverage/` após rodar `npm run test:coverage`.
+- statements: 85%;
+- lines: 85%;
+- branches: 75%;
+- functions: 90%.
 
-## Exemplo curto
+Não reduza limites para acomodar uma mudança. Entry points declarativos e os
+componentes shadcn possuídos pelo projeto podem ser excluídos quando não contêm
+regra própria; o fluxo que os consome continua testado.
 
-```tsx
-import { render, screen } from '../../../test/render';
-import { Saudacao } from '../components/Saudacao';
+## Interface e acessibilidade
 
-test('mostra o nome informado', () => {
-  render(<Saudacao nome="Ana" />);
-  expect(screen.getByText('Olá, Ana')).toBeInTheDocument();
-});
-```
+- Prefira queries por papel, nome e label.
+- Cubra sucesso e falhas recuperáveis.
+- Para telas assíncronas, cubra carregando, vazio, erro, sucesso e permissão.
+- Teste navegação por teclado, foco, reduced motion e overflow em 360 px.
+- Atualize screenshot somente após inspeção da diferença.
+- Evidências Playwright são mantidas apenas na falha.
 
-### Injeção de Dependências em Testes
+## Firebase
 
-Para componentes que dependem de estado global, providers de roteamento, ou clientes de API, o ambiente de testes deve fornecer instâncias ou mocks desses contextos (Dependency Injection via Context).
+O marco estrutural verifica configuração válida e exercita as regras deny-all
+no Emulator Suite sem acessar produção. Quando uma feature liberar Firestore ou
+Storage, amplie `pnpm test:emulators` antes da regra permissiva. Use o project ID
+`demo-poe-crafter` e nunca credenciais reais.
 
-- Em vez de importar o `render` do `@testing-library/react` em cada arquivo, centralizamos essa configuração em um utilitário próprio, como um `renderWithProviders`.
-- No nosso template, a importação customizada de `../../../test/render` (mostrada acima) se encarrega de envelopar o componente com todos os Providers necessários, garantindo que a árvore de componentes em teste tenha o mesmo contexto que a aplicação real.
+## Reprodutibilidade
 
-O foco é no que aparece na tela, não em como o componente foi escrito por dentro.
-
-### O que já vem testado
-
-A composição da aplicação tem smoke test em `src/app/tests/`: a rota raiz monta com layout e página inicial, um endereço desconhecido cai na tela de "não encontrada" sem derrubar o layout, e uma rota que lança erro é substituída pelo `errorElement`. Se você mexer em rotas ou no layout, esses testes são a primeira rede.
-
-O setup também é comportamento público do template. Seus testes executam dry-run, personalização, repetição idempotente e rollback em pastas temporárias. A persistência testa migração, backup de dados inválidos, conflitos de revisão e sincronização entre abas. O smoke test serve `dist/` em uma porta efêmera e acessa o HTML e seus assets como um navegador faria.
-
-O smoke E2E complementa essas redes executando o React no Chromium: adiciona e
-remove uma nota usando nomes acessíveis e confirma a rota de fallback. Ele fica
-em um gate separado de `npm run validate` para que a validação local não baixe
-binários de navegador implicitamente.
-
-## O que NÃO testar
-
-- Estado interno ou nomes de variáveis do componente.
-- Detalhes de implementação de bibliotecas de terceiros.
-- Estilos puramente visuais sem impacto no comportamento.
-- Casos impossíveis só para "aumentar cobertura".
-
-## Investigar falhas
-
-1. Leia a mensagem de erro: ela costuma indicar o que era esperado e o que aconteceu.
-2. Rode em modo contínuo (`npm run test:watch`) e ajuste até passar.
-3. Se um teste falha após uma mudança de comportamento intencional, atualize o teste para o novo comportamento esperado.
-4. Se a falha for inesperada, corrija o código, não o teste.
+O CI instala com `pnpm install --frozen-lockfile` em Node 22. Um teste que passa
+apenas com dependência hoisted ou arquivo local não declarado é inválido.

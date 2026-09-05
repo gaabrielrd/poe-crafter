@@ -31,6 +31,20 @@ export function checkDocs(root = defaultRoot) {
   const packageJson = JSON.parse(readFileSync(packageFile, 'utf8'));
   const scripts = new Set(Object.keys(packageJson.scripts ?? {}));
   const files = [join(root, 'README.md'), ...markdownFiles(join(root, 'docs'))].filter(existsSync);
+  const historicalRoots = ['docs/decisions/', 'docs/tasks/', 'docs/entregas/'];
+  const pnpmCommands = new Set([
+    'add',
+    'audit',
+    'config',
+    'dev',
+    'dlx',
+    'exec',
+    'install',
+    'list',
+    'remove',
+    'run',
+    'update',
+  ]);
 
   for (const file of files) {
     const content = readFileSync(file, 'utf8');
@@ -39,8 +53,15 @@ export function checkDocs(root = defaultRoot) {
       const target = localLinkTarget(file, match[1], root);
       if (target && !existsSync(target)) errors.push(`${label}: link inexistente "${match[1]}".`);
     }
-    for (const match of content.matchAll(/npm run ([a-zA-Z0-9:_-]+)/g)) {
-      if (!scripts.has(match[1])) errors.push(`${label}: script npm inexistente "${match[1]}".`);
+    if (!historicalRoots.some((prefix) => label.startsWith(prefix))) {
+      for (const match of content.matchAll(/`pnpm (?:run )?([a-zA-Z0-9:_-]+)/g)) {
+        if (!pnpmCommands.has(match[1]) && !scripts.has(match[1])) {
+          errors.push(`${label}: script pnpm inexistente "${match[1]}".`);
+        }
+      }
+      if (/`npm run [a-zA-Z0-9:_-]+/.test(content)) {
+        errors.push(`${label}: comando npm ativo; use pnpm.`);
+      }
     }
   }
 
@@ -56,9 +77,9 @@ export function checkDocs(root = defaultRoot) {
     const hookFile = join(hooksRoot, hook);
     if (!existsSync(hookFile)) continue;
     const content = readFileSync(hookFile, 'utf8');
-    for (const match of content.matchAll(/npm run ([a-zA-Z0-9:_-]+)/g)) {
-      if (!scripts.has(match[1])) {
-        errors.push(`.husky/${hook}: script npm inexistente "${match[1]}".`);
+    for (const match of content.matchAll(/pnpm (?:run )?([a-zA-Z0-9:_-]+)/g)) {
+      if (!pnpmCommands.has(match[1]) && !scripts.has(match[1])) {
+        errors.push(`.husky/${hook}: script pnpm inexistente "${match[1]}".`);
       }
     }
   }
@@ -69,20 +90,6 @@ export function checkDocs(root = defaultRoot) {
     for (const match of agents.matchAll(/^- \*\*([a-z0-9-]+)\*\* —/gm)) {
       if (!existsSync(join(root, 'skills', match[1], 'SKILL.md'))) {
         errors.push(`docs/agents.md: skill inexistente "${match[1]}".`);
-      }
-    }
-  }
-
-  const stateFile = join(root, '.template-state.json');
-  if (existsSync(stateFile)) {
-    const state = JSON.parse(readFileSync(stateFile, 'utf8'));
-    if (state.technicalName !== 'web-project-template') {
-      const staleFiles = ['package.json', 'index.html', 'README.md', 'docs/architecture.md'];
-      for (const staleFile of staleFiles) {
-        const path = join(root, staleFile);
-        if (existsSync(path) && readFileSync(path, 'utf8').includes('web-project-template')) {
-          errors.push(`${staleFile}: identificador original ainda presente após o setup.`);
-        }
       }
     }
   }

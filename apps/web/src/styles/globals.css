@@ -1,0 +1,169 @@
+@import 'tailwindcss';
+
+@font-face {
+  font-family: 'TheMix';
+  src: url('/fonts/themix-bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'TheMix';
+  src: url('/fonts/themix-bold-italic.woff2') format('woff2');
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+
+:root {
+  color-scheme: dark;
+  --background: #0e1116;
+  --foreground: #f4efe3;
+  --card: #151a22;
+  --card-foreground: #f4efe3;
+  --popover: #151a22;
+  --popover-foreground: #f4efe3;
+  --primary: #c9a45d;
+  --primary-foreground: #17130c;
+  --secondary: #252c37;
+  --secondary-foreground: #f4efe3;
+  --muted: #1c222c;
+  --muted-foreground: #aeb5bf;
+  --accent: #302a20;
+  --accent-foreground: #f0d69e;
+  --destructive: #b95757;
+  --destructive-foreground: #fff5f2;
+  --success: #66b795;
+  --success-foreground: #071d14;
+  --border: #313946;
+  --input: #313946;
+  --ring: #d7b670;
+  --radius: 0.625rem;
+  --font-display: 'TheMix', Georgia, serif;
+  --font-sans: 'Archivo Variable', Archivo, sans-serif;
+  --font-mono: 'Cascadia Code', 'SFMono-Regular', Consolas, monospace;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) - 0.25rem);
+  --radius-md: calc(var(--radius) - 0.125rem);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 0.25rem);
+  --font-display: var(--font-display);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+
+  html {
+    min-width: 20rem;
+    background: var(--background);
+  }
+
+  body {
+    min-width: 20rem;
+    min-height: 100vh;
+    margin: 0;
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    text-rendering: optimizeLegibility;
+  }
+
+  button,
+  a {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  :focus-visible {
+    outline: 0.125rem solid var(--ring);
+    outline-offset: 0.1875rem;
+  }
+
+  ::selection {
+    background: var(--primary);
+    color: var(--primary-foreground);
+  }
+}
+
+.app-shell {
+  background-image:
+    linear-gradient(
+      to right,
+      color-mix(in srgb, var(--border) 18%, transparent) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--border) 18%, transparent) 1px,
+      transparent 1px
+    ),
+    radial-gradient(
+      circle at 50% -20%,
+      color-mix(in srgb, var(--primary) 15%, transparent),
+      transparent 42rem
+    );
+  background-size:
+    4rem 4rem,
+    4rem 4rem,
+    100% 100%;
+}
+
+.enter-header {
+  animation: enter-header 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.enter-content {
+  animation: enter-content 520ms 80ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes enter-header {
+  from {
+    opacity: 0;
+    transform: translateY(-0.5rem);
+  }
+}
+
+@keyframes enter-content {
+  from {
+    opacity: 0;
+    transform: translateY(0.75rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

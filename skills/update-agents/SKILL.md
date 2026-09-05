@@ -41,7 +41,7 @@ tarefa. Não entra explicação, tutorial nem histórico.
 | Entra                                                     | Não entra                        |
 | --------------------------------------------------------- | -------------------------------- |
 | "Importe de `react-router`, nunca de `react-router-dom`." | O motivo detalhado da escolha    |
-| "Execute `npm run validate`."                             | O que cada etapa do validate faz |
+| "Execute `pnpm validate`."                                | O que cada etapa do validate faz |
 | "Não reduza os limites de cobertura."                     | Como configurar o Vitest         |
 
 O detalhe fica em `docs/` e o `AGENTS.md` aponta para lá. Duplicar os dois
@@ -50,7 +50,7 @@ O detalhe fica em `docs/` e o `AGENTS.md` aponta para lá. Duplicar os dois
 ## Processo
 
 1. Identifique a mudança e confirme que ela já está no código, com
-   `npm run validate` verde. Regra não documenta intenção; documenta o que
+   `pnpm validate` verde. Regra não documenta intenção; documenta o que
    passou a valer.
 2. Leia o `AGENTS.md` atual inteiro antes de editar.
 3. Decida se a mudança **cria**, **altera** ou **revoga** uma regra. Se não
@@ -64,9 +64,9 @@ O detalhe fica em `docs/` e o `AGENTS.md` aponta para lá. Duplicar os dois
    texto como se confere.
 7. Verifique se o `CLAUDE.md` continua coerente — ele aponta para o
    `AGENTS.md` e para a ordem de leitura de `docs/`.
-8. Confira à mão os comandos e caminhos citados: `npm run check:docs`
+8. Confira à mão os comandos e caminhos citados: `pnpm check:docs`
    valida `README.md` e `docs/`, mas **não** cobre o `AGENTS.md`.
-9. Rode `npm run validate`.
+9. Rode `pnpm validate`.
 
 ## Regras de escrita
 
@@ -83,4 +83,4 @@ O detalhe fica em `docs/` e o `AGENTS.md` aponta para lá. Duplicar os dois
 - `AGENTS.md` atualizado, com as regras que valem hoje.
 - Lista do que foi acrescentado, alterado e removido, com o motivo.
 - Confirmação de que `CLAUDE.md` continua coerente.
-- Resultado de `npm run validate`.
+- Resultado de `pnpm validate`.

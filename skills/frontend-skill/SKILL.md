@@ -10,13 +10,13 @@ description: Use when the task asks for a visually strong landing page, website,
 Antes de aplicar qualquer orientação genérica desta skill, leia
 `docs/styleguide.md`. Neste projeto:
 
-- cor, tipografia, espaçamento, raio e movimento vêm dos tokens de
-  `@vitru/styleguide/tokens.css` — nunca use valor literal de cor;
-- a paleta é o tema `vitru`; a cor de destaque é `--accent`;
-- a biblioteca de ícones é `lucide-react`, com as classes `icon`/`icon-sm`;
-- estilização é feita com CSS Modules, um por componente;
-- as telas são montadas com o kit de `@vitru/styleguide`, não com marcação
-  inventada do zero;
+- cor, tipografia, espaçamento, raio e movimento vêm dos tokens semânticos
+  definidos em `apps/web/src/styles/globals.css`; nunca use valor literal de
+  cor em componentes;
+- Tailwind CSS é a camada de estilo e os componentes shadcn/ui pertencem ao app
+  em `apps/web/src/shared/ui`; não use CSS Modules nem crie `packages/ui`;
+- a biblioteca de ícones é `lucide-react`;
+- novas telas devem reutilizar os componentes locais antes de criar primitivas;
 - a rota `/styleguide` é a referência viva e deve continuar funcionando.
 
 Use this skill when the quality of the work depends on art direction, hierarchy, restraint, imagery, and motion rather than component count.

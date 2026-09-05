@@ -1,85 +1,67 @@
 {
-  "name": "web-project-template",
+  "name": "poe-crafter",
   "private": true,
   "version": "0.0.0",
   "license": "UNLICENSED",
   "type": "module",
-  "packageManager": "npm@10.6.0",
+  "description": "Planejador web que transforma um item-alvo do Path of Exile 1 em estratégias de crafting validadas, com probabilidades, custos e acompanhamento da execução.",
+  "packageManager": "pnpm@11.19.0",
   "engines": {
-    "node": ">=22"
+    "node": ">=22.22.2 <23"
   },
   "scripts": {
-    "dev": "vite",
-    "build": "npm run typecheck && npm run build:bundle && npm run smoke:build",
-    "build:bundle": "vite build",
+    "dev": "pnpm --filter @poe-crafter/web dev",
+    "dev:emulators": "firebase emulators:start --project demo-poe-crafter --only auth,firestore,hosting,storage",
+    "build": "pnpm typecheck && pnpm -r --if-present build && pnpm smoke:build",
     "check:architecture": "node scripts/check-architecture.mjs",
     "check:docs": "node scripts/check-docs.mjs",
     "check:toolchain": "node scripts/check-toolchain.mjs",
+    "check:workspace": "pnpm list --recursive --depth -1",
+    "check:firebase": "node scripts/check-firebase-config.mjs",
+    "check:skills": "node scripts/check-skills.mjs",
+    "check:styleguide": "node scripts/check-styleguide.mjs --strict",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "typecheck": "tsc -b",
-    "test": "npm run test:coverage && npm run test:setup",
-    "test:unit": "vitest run",
-    "test:coverage": "vitest run --coverage",
-    "test:setup": "node --test scripts/*.test.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit && pnpm -r --if-present typecheck",
+    "test": "pnpm test:coverage && pnpm test:contracts",
+    "test:unit": "pnpm --filter @poe-crafter/web test:unit",
+    "test:coverage": "pnpm --filter @poe-crafter/web test:coverage",
+    "test:contracts": "node --test scripts/*.test.mjs",
     "test:e2e": "playwright test",
     "test:e2e:update": "playwright test --update-snapshots",
-    "test:watch": "vitest",
-    "setup": "node scripts/setup.mjs",
-    "update:template": "node scripts/update-template.mjs",
+    "test:emulators": "pnpm build && firebase emulators:exec --project demo-poe-crafter --only hosting,firestore,storage \"node scripts/verify-emulators.mjs\"",
+    "test:watch": "pnpm --filter @poe-crafter/web test:watch",
     "generate:feature": "node scripts/generate-feature.mjs",
     "smoke:build": "node scripts/smoke-build.mjs",
     "sync:skills": "node scripts/sync-skills.mjs",
-    "check:skills": "node scripts/check-skills.mjs",
-    "check:styleguide": "node scripts/check-styleguide.mjs",
-    "validate": "npm run check:skills && npm run check:architecture && npm run check:docs && npm run check:styleguide && npm run format:check && npm run lint && npm run test && npm run build",
-    "prepare": "husky && npm run sync:skills"
-  },
-  "dependencies": {
-    "@vitru/styleguide": "^0.1.0",
-    "lucide-react": "^1.33.0",
-    "react": "^19.2.8",
-    "react-dom": "^19.2.8",
-    "react-router": "^8.3.0"
+    "validate": "pnpm check:toolchain && pnpm check:workspace && pnpm check:skills && pnpm check:architecture && pnpm check:docs && pnpm check:styleguide && pnpm check:firebase && pnpm format:check && pnpm lint && pnpm test && pnpm build",
+    "prepare": "husky && pnpm sync:skills"
   },
   "devDependencies": {
-    "@eslint/js": "^10.0.1",
+    "@eslint/js": "^9.39.2",
     "@playwright/test": "^1.62.1",
-    "@testing-library/jest-dom": "^7.0.1",
-    "@testing-library/react": "^16.3.2",
-    "@testing-library/user-event": "^14.6.5",
     "@types/node": "^26.2.0",
-    "@types/react": "^19.2.18",
-    "@types/react-dom": "^19.2.4",
-    "@vitejs/plugin-react": "^6.1.0",
-    "@vitest/coverage-v8": "^4.1.11",
-    "eslint": "^10.9.0",
+    "@typescript-eslint/parser": "^8.67.0",
+    "eslint": "^9.39.2",
     "eslint-plugin-jsx-a11y": "^6.10.2",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.4",
+    "firebase-tools": "^15.29.0",
     "globals": "^17.11.0",
     "husky": "^9.1.7",
-    "jsdom": "^30.0.1",
-    "lint-staged": "^17.3.0",
+    "lint-staged": "^16.3.4",
     "prettier": "^3.9.6",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.67.0",
-    "vite": "^8.2.2",
-    "vitest": "^4.1.10"
+    "typescript-eslint": "^8.67.0"
   },
   "lint-staged": {
-    "*.{ts,tsx}": [
+    "*.{js,mjs,ts,tsx}": [
       "eslint --fix",
       "prettier --write"
     ],
-    "*.{css,json,md}": [
+    "*.{css,json,md,yaml,yml}": [
       "prettier --write"
     ]
-  },
-  "overrides": {
-    "eslint-plugin-jsx-a11y": {
-      "eslint": "$eslint"
-    }
   }
 }

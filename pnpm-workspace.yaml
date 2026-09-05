@@ -1,0 +1,13 @@
+packages:
+  - apps/*
+  - functions
+  - packages/*
+
+engineStrict: true
+saveWorkspaceProtocol: rolling
+sharedWorkspaceLockfile: true
+disallowWorkspaceCycles: true
+
+allowBuilds:
+  protobufjs: true
+  re2: true

@@ -13,7 +13,7 @@ reconstruir a história a partir do Git.
 - Um arquivo por entrega, nomeado `AAAA-MM-DD-slug-da-entrega.md`
   (ex.: `2026-08-17-cadastro-de-clientes.md`).
 - O agente cria o arquivo com a skill `document-delivery`, depois de
-  implementar o plano e com `npm run validate` verde.
+  implementar o plano e com `pnpm validate` verde.
 - Não sobrescreva entregas anteriores. Se a mesma entrega ganhar um
   incremento, acrescente uma seção datada ao arquivo existente.
 - Registre apenas resultado real de comando executado; não estime saída

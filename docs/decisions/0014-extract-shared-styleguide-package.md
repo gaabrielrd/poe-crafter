@@ -2,8 +2,8 @@
 
 ## Status
 
-Aceita. Substitui, para o estado atual, a localização definida nas ADRs 0011,
-0012 e 0013.
+Substituída pela [ADR 0016](0016-tailwind-shadcn-ui.md). A decisão abaixo
+registra o período em que o template dependia do pacote Vitru.
 
 ## Contexto
 

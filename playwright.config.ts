@@ -51,7 +51,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: `npm run build:bundle && npx vite preview --host 127.0.0.1 --port ${port}`,
+    command: `pnpm --filter @poe-crafter/web build && pnpm --filter @poe-crafter/web exec vite preview --host 127.0.0.1 --port ${port}`,
     url: baseURL,
     reuseExistingServer: false,
     timeout: 120_000,
