@@ -7,7 +7,7 @@
   "description": "Planejador web que transforma um item-alvo do Path of Exile 1 em estratégias de crafting validadas, com probabilidades, custos e acompanhamento da execução.",
   "packageManager": "pnpm@11.19.0",
   "engines": {
-    "node": ">=22.22.2 <23"
+    "node": ">=24.14.1 <25"
   },
   "scripts": {
     "dev": "pnpm --filter @poe-crafter/web dev",

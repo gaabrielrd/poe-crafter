@@ -14,7 +14,7 @@ acidental a um projeto real.
 ## Decisão
 
 - Preparar Hosting para servir `apps/web/dist`.
-- Manter `functions` como workspace TypeScript em Node 22, com API pública vazia
+- Manter `functions` como workspace TypeScript em Node 24, com API pública vazia
   e sem endpoints, triggers ou SDK Firebase neste marco.
 - Versionar regras Firestore e Storage que negam todas as operações.
 - Versionar índices vazios válidos e portas do Emulator Suite.

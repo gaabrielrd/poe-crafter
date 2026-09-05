@@ -29,3 +29,13 @@ test('mantém navegação e conteúdo utilizáveis em 360 px', async ({ page }) 
   await page.keyboard.press('Tab');
   await expect(page.getByRole('link', { name: 'Página inicial' })).toBeFocused();
 });
+
+test('importa texto de item e mostra a confirmação normalizada', async ({ page }) => {
+  await page.goto('/new');
+  await page
+    .getByRole('textbox', { name: 'Texto do item' })
+    .fill('New Item\nDivine Crown\nItemLevel: 86\nLevelReq: 84');
+  await page.getByRole('button', { name: 'Interpretar item' }).click();
+  await expect(page.getByRole('heading', { name: 'Divine Crown' })).toBeVisible();
+  await expect(page.getByText('86', { exact: true })).toBeVisible();
+});

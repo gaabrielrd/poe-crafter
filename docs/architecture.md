@@ -134,7 +134,7 @@ regras detalhadas ficam em [styleguide.md](styleguide.md).
 ## Backend Firebase
 
 `functions` é um workspace TypeScript privado, preparado para Cloud Functions
-2nd gen em Node 22. No marco atual seu `index.ts` não publica handlers. O SDK
+2nd gen em Node 24. No marco atual seu `index.ts` não publica handlers. O SDK
 Firebase entra quando a primeira API real for planejada.
 
 Futuras responsabilidades:

@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   validate:
-    name: Validate (Node 22)
+    name: Validate (Node 24)
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:

@@ -18,7 +18,7 @@ function project() {
     'firebase.json',
     JSON.stringify({
       hosting: { public: 'apps/web/dist' },
-      functions: { source: 'functions', runtime: 'nodejs22' },
+      functions: { source: 'functions', runtime: 'nodejs24' },
       emulators: Object.fromEntries(
         ['auth', 'functions', 'firestore', 'hosting', 'storage'].map((name, index) => [
           name,
@@ -34,7 +34,7 @@ function project() {
   return root;
 }
 
-test('aceita emuladores locais, Node 22 e regras deny-all', () => {
+test('aceita emuladores locais, Node 24 e regras deny-all', () => {
   const root = project();
   try {
     assert.deepEqual(checkFirebaseConfig(root), []);

@@ -28,7 +28,7 @@ Indicado para:
 
 ## Pré-requisitos
 
-- Node.js 22.22.2 (use a versão de `.nvmrc`).
+- Node.js 24.14.1 (use a versão de `.nvmrc`).
 - pnpm 11.19.0 (use a versão exata de `packageManager`).
 - Git.
 - Java 21 para os emuladores Firestore e Storage.
@@ -84,7 +84,7 @@ pnpm test:e2e
 | `pre-commit` | `lint-staged` nos arquivos alterados            |
 | `commit-msg` | Convenção `tipo: descrição`                     |
 | `pre-push`   | `typecheck` e testes unitários web              |
-| CI           | `validate`, auditoria e E2E Chromium em Node 22 |
+| CI           | `validate`, auditoria e E2E Chromium em Node 24 |
 
 O workflow está em `.github/workflows/ci.yml`. Instalações no CI usam
 `pnpm install --frozen-lockfile` e o lockfile único da raiz.
@@ -106,7 +106,7 @@ O workflow está em `.github/workflows/ci.yml`. Instalações no CI usam
 | `pnpm test:emulators`                           | Validar Hosting e regras deny-all no projeto demo             |
 | `pnpm check:architecture`                       | Verificar features e dependências entre workspaces            |
 | `pnpm check:styleguide`                         | Verificar Tailwind, shadcn, tokens, fontes e ícones           |
-| `pnpm check:firebase`                           | Verificar emuladores, Node 22 e regras deny-all               |
+| `pnpm check:firebase`                           | Verificar emuladores, Node 24 e regras deny-all               |
 | `pnpm generate:feature -- --name="item-import"` | Gerar a estrutura Tailwind de uma feature web                 |
 | `pnpm sync:skills`                              | Sincronizar skills canônicas para os agentes                  |
 | `pnpm validate`                                 | Executar todos os gates locais obrigatórios                   |

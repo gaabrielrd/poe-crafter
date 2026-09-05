@@ -1,6 +1,6 @@
 # 0010 - Versão exata do npm nos ambientes controlados
 
-- **Status**: Substituído pela [ADR 0015](0015-pnpm-workspaces-node-22.md)
+- **Status**: Substituído pela [ADR 0018](0018-node-24-runtime.md)
 - **Data**: 2026-08-08
 
 ## Contexto

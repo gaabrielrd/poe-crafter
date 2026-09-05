@@ -22,8 +22,8 @@ export function checkFirebaseConfig(root = defaultRoot) {
   if (config.hosting?.public !== 'apps/web/dist') {
     errors.push('firebase.json: Hosting deve publicar "apps/web/dist".');
   }
-  if (config.functions?.source !== 'functions' || config.functions?.runtime !== 'nodejs22') {
-    errors.push('firebase.json: Functions deve usar source "functions" e runtime "nodejs22".');
+  if (config.functions?.source !== 'functions' || config.functions?.runtime !== 'nodejs24') {
+    errors.push('firebase.json: Functions deve usar source "functions" e runtime "nodejs24".');
   }
   for (const emulator of ['auth', 'functions', 'firestore', 'hosting', 'storage']) {
     if (!config.emulators?.[emulator]?.port) {

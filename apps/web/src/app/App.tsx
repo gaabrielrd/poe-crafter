@@ -1,4 +1,4 @@
-import { Anvil, CircleCheck, Home, Palette } from 'lucide-react';
+import { Anvil, CircleCheck, FilePlus2, Home, Palette } from 'lucide-react';
 import { Link, NavLink, Outlet } from 'react-router';
 import { cn } from '@/shared/lib';
 import { Badge } from '@/shared/ui';
@@ -32,6 +32,7 @@ export function App() {
           >
             {[
               { to: '/', label: 'Início', icon: Home, end: true },
+              { to: '/new', label: 'Novo craft', icon: FilePlus2, end: false },
               { to: '/styleguide', label: 'Styleguide', icon: Palette, end: false },
             ].map(({ to, label, icon: Icon, end }) => (
               <NavLink

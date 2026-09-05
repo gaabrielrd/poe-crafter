@@ -15,7 +15,7 @@ O comando verifica tipos, compila `functions` e packages, gera
 pnpm install --frozen-lockfile
 ```
 
-O monorepo usa um `pnpm-lock.yaml`. Node 22.22.2 e pnpm 11.19.0 ficam alinhados
+O monorepo usa um `pnpm-lock.yaml`. Node 24.14.1 e pnpm 11.19.0 ficam alinhados
 entre `.nvmrc`, `packageManager`, engines e CI. `pnpm-workspace.yaml` permite
 scripts de build somente para `re2` e `protobufjs`, transitivos do Firebase CLI.
 
@@ -27,7 +27,7 @@ segredos no repositório.
 
 ## Integração contínua
 
-`.github/workflows/ci.yml` possui três jobs em Node 22:
+`.github/workflows/ci.yml` possui três jobs em Node 24:
 
 - Validate: instalação congelada e `pnpm validate`.
 - Auditoria: `pnpm audit --audit-level=high`.

@@ -8,7 +8,8 @@
     "noEmit": true,
     "jsx": "react-jsx",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@poe-crafter/shared-types": ["../../packages/shared-types/src/index.ts"]
     }
   },
   "include": ["src"]

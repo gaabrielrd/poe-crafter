@@ -1,4 +1,6 @@
-import { ArrowRight, Blocks, Database, ShieldCheck, TerminalSquare } from 'lucide-react';
+import { ArrowRight, Blocks, Database, FilePlus2, ShieldCheck, TerminalSquare } from 'lucide-react';
+import { Link } from 'react-router';
+import { Button } from '@/shared/ui';
 
 const PNPM_SCRIPTS: ReadonlyArray<{ command: string; description: string }> = [
   { command: 'pnpm dev', description: 'Inicia a aplicação web com Vite' },
@@ -58,6 +60,29 @@ export function HomePage() {
             </li>
           ))}
         </ul>
+      </section>
+
+      <section
+        aria-labelledby="start-craft-title"
+        className="flex flex-col gap-5 border-b border-border/80 pb-10 sm:flex-row sm:items-center sm:justify-between"
+      >
+        <div>
+          <h2
+            id="start-craft-title"
+            className="font-display text-2xl tracking-wide text-foreground"
+          >
+            Comece pelo item-alvo
+          </h2>
+          <p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground">
+            Cole o texto de um item e confira os campos reconhecidos antes de planejar o craft.
+          </p>
+        </div>
+        <Button asChild>
+          <Link to="/new">
+            <FilePlus2 className="size-4" aria-hidden="true" />
+            Importar item
+          </Link>
+        </Button>
       </section>
 
       <section

@@ -17,7 +17,7 @@ importam SDKs Firebase.
 O repositório contém somente a fundação local:
 
 - Hosting para `apps/web/dist`.
-- Functions 2nd gen em Node 22, ainda sem handlers.
+- Functions 2nd gen em Node 24, ainda sem handlers.
 - Firestore e Storage deny-all.
 - Emulator Suite para Auth, Firestore, Hosting e Storage no project ID
   `demo-poe-crafter`. Functions permanece configurado, mas não inicia enquanto

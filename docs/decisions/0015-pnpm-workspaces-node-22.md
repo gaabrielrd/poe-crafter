@@ -1,8 +1,10 @@
 # ADR 0015: monorepo pnpm com Node 22
 
+> **Status histórico:** substituída pela [ADR 0018](0018-node-24-runtime.md).
+
 ## Status
 
-Aceita em 2026-09-05.
+Substituída em 2026-09-05.
 
 ## Contexto
 

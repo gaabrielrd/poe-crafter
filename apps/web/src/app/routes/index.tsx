@@ -3,6 +3,7 @@ import { App } from '@/app/App';
 import { NotFound, RouteErrorFallback } from '@/app/components/RouteErrorFallback';
 import { StyleguidePage } from '@/app/styleguide';
 import { HomePage } from '@/features/home';
+import { ItemImportPage } from '@/features/item-import';
 
 /**
  * Definicao das rotas, separada do router para permitir montar a mesma
@@ -15,6 +16,10 @@ export const routes: RouteObject[] = [
     // Captura erros do layout e de qualquer rota filha sem errorElement proprio.
     errorElement: <RouteErrorFallback />,
     children: [
+      {
+        path: 'new',
+        element: <ItemImportPage />,
+      },
       {
         index: true,
         element: <HomePage />,

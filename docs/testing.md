@@ -77,5 +77,5 @@ Storage, amplie `pnpm test:emulators` antes da regra permissiva. Use o project I
 
 ## Reprodutibilidade
 
-O CI instala com `pnpm install --frozen-lockfile` em Node 22. Um teste que passa
+O CI instala com `pnpm install --frozen-lockfile` em Node 24. Um teste que passa
 apenas com dependência hoisted ou arquivo local não declarado é inválido.
