@@ -34,8 +34,11 @@ test('importa texto de item e mostra a confirmação normalizada', async ({ page
   await page.goto('/new');
   await page
     .getByRole('textbox', { name: 'Texto do item' })
-    .fill('New Item\nDivine Crown\nItemLevel: 86\nLevelReq: 84');
+    .fill('New Item\nDivine Crown\nItemLevel: 86\nLevelReq: 84\nPrefix: IncreasedLife9');
   await page.getByRole('button', { name: 'Interpretar item' }).click();
   await expect(page.getByRole('heading', { name: 'Divine Crown' })).toBeVisible();
   await expect(page.getByText('86', { exact: true })).toBeVisible();
+  await page.getByLabel('Classificação').selectOption('required');
+  await page.getByRole('button', { name: 'Confirmar alvo' }).click();
+  await expect(page.getByRole('alert')).toContainText('Alvo confirmado');
 });

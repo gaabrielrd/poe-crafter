@@ -177,7 +177,11 @@ project ID `demo-poe-crafter` para os emuladores.
 
 ## Limitações conhecidas
 
-- A fundação ainda não importa itens, autentica jogadores nem gera planos.
+- A fundação já importa texto de item em `/new`, mas ainda não autentica
+  jogadores nem gera planos.
+- A importação e a confirmação/classificação atuais são locais, para um item por
+  vez, limitadas ao texto em inglês; liga, OCR, histórico e planejamento são
+  próximas fatias.
 - `functions`, `shared-types` e `poe-data` não expõem comportamento de produto.
 - Firestore e Storage negam toda leitura e escrita até regras de uma feature real
   serem planejadas e testadas.

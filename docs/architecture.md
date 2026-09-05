@@ -98,6 +98,37 @@ Regras:
    aplicável, sem permissão.
 7. Não existe gerenciador global de estado aprovado.
 
+## Decisões do produto
+
+O limite do sistema é uma SPA responsiva para PoE 1, apoiada por Firebase para
+identidade, persistência, arquivos temporários e jobs assíncronos. A autoridade
+de regras permanece nos packages de domínio; a interface apenas coleta dados,
+apresenta estados e registra decisões do jogador.
+
+Capacidades do PRD e seus responsáveis:
+
+- importação e confirmação de item: features web + `shared-types`;
+- dados de jogo: `poe-data` (RePoE adaptado para schema próprio);
+- legalidade, transições e validação: `crafting-engine`;
+- busca, comparação e simulação: `planner` + `simulator`;
+- custos: `pricing` com snapshots imutáveis do poe.ninja;
+- identidade, histórico, jobs e operações: Firebase Functions, Firestore e
+  Storage.
+
+O fluxo de dados aprovado é item colado ou imagem → parsing → alvo normalizado
+→ confirmação/classificação → planejamento determinístico → plano imutável com
+snapshots → execução append-only → resumo estimado versus real. O navegador não
+é autoridade para custos, probabilidades ou versões de dados.
+
+As integrações externas são RePoE, poe.ninja e Cloud Vision dentro dos limites
+do PRD; APIs da GGG e automação do cliente ficam fora do sistema. A sessão pode
+começar anônima e ser vinculada somente ao Google. Crafts permanecem privados,
+sem links públicos no MVP, e o orçamento operacional máximo é US$10/mês.
+
+O produto é inglês-only, deve atender WCAG 2.2 AA e suportar largura mínima de
+360 px. Não há PWA, modo offline ou promessa de custo garantido. Decisões em
+aberto: Nenhuma.
+
 ### Rotas
 
 Rotas ficam em `apps/web/src/app/routes` e importam de `react-router`, nunca de
@@ -107,6 +138,8 @@ testes.
 Estado atual:
 
 - `/`: home estrutural.
+- `/new`: importação de item por texto, com parser local e resumo do alvo
+  normalizado.
 - `/styleguide`: contrato visual vivo.
 - `*`: página não encontrada, sempre por último.
 - `errorElement`: fallback de carregamento/renderização sem tela branca.
@@ -155,8 +188,9 @@ e nenhum project ID real é versionado. Firestore e Storage começam deny-all.
 
 ### `shared-types`
 
-Contratos serializáveis compartilhados. Não depende de React, Firebase, Node,
-providers externos ou outro package interno.
+Contratos serializáveis compartilhados, incluindo `NormalizedItemTarget` e seus
+afixos normalizados. Não depende de React, Firebase, Node, providers externos ou
+outro package interno.
 
 ### `poe-data`
 
@@ -266,6 +300,8 @@ Metas do produto:
 
 ## Evolução incremental
 
-O marco estrutural está implementado. A próxima capacidade deve começar por um
-plano específico para importação de item por texto, sem antecipar OCR, planner ou
-autenticação. Toda decisão relevante gera ou atualiza ADR em `docs/decisions`.
+O marco estrutural, a importação de item por texto e a confirmação/classificação
+de modificadores (RF-04) estão implementados localmente. A próxima capacidade
+deve começar por um plano específico para escolha de liga (RF-01), antes de
+OCR, planner ou autenticação. Toda decisão relevante gera ou atualiza ADR em
+`docs/decisions`.

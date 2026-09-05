@@ -5,3 +5,18 @@ export type {
   ItemImportErrorCode,
   ItemImportResult,
 } from './model/parse-item-text';
+export {
+  confirmItemDraft,
+  createItemDraft,
+  MODIFIER_CLASSIFICATIONS,
+  validateItemDraft,
+} from './model/confirm-item';
+export type {
+  ConfirmedItemTarget,
+  ConfirmationIssue,
+  EditableItemFields,
+  EditableModifier,
+  ItemDraft,
+  ModifierClassification,
+  ModifierSource,
+} from './model/confirm-item';
