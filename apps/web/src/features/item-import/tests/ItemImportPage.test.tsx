@@ -3,15 +3,22 @@ import { describe, expect, it } from 'vitest';
 import { ItemImportPage } from '../components/ItemImportPage';
 import { renderWithProviders } from '@/test/render';
 
+async function chooseStandardLeague(user: ReturnType<typeof renderWithProviders>['user']) {
+  const league = await screen.findByRole('combobox', { name: 'Liga PC ativa' });
+  await user.selectOptions(league, 'standard');
+}
+
 describe('ItemImportPage', () => {
-  it('mostra erro acionável para texto vazio', () => {
-    renderWithProviders(<ItemImportPage />);
+  it('mostra erro acionável para texto vazio', async () => {
+    const { user } = renderWithProviders(<ItemImportPage />);
+    await chooseStandardLeague(user);
     fireEvent.click(screen.getByRole('button', { name: 'Interpretar item' }));
     expect(screen.getByRole('alert')).toHaveTextContent('Cole o texto de um item');
   });
 
-  it('mostra o alvo reconhecido e alerta item level ausente', () => {
-    renderWithProviders(<ItemImportPage />);
+  it('mostra o alvo reconhecido e alerta item level ausente', async () => {
+    const { user } = renderWithProviders(<ItemImportPage />);
+    await chooseStandardLeague(user);
     fireEvent.change(screen.getByRole('textbox', { name: 'Texto do item' }), {
       target: { value: 'New Item\nDivine Crown\nArmour: 10\nLevelReq: 84' },
     });
@@ -20,8 +27,9 @@ describe('ItemImportPage', () => {
     expect(screen.getByRole('alert')).toHaveTextContent('item level não foi encontrado');
   });
 
-  it('mostra um item completo pronto para confirmação', () => {
-    renderWithProviders(<ItemImportPage />);
+  it('mostra um item completo pronto para confirmação', async () => {
+    const { user } = renderWithProviders(<ItemImportPage />);
+    await chooseStandardLeague(user);
     fireEvent.change(screen.getByRole('textbox', { name: 'Texto do item' }), {
       target: {
         value:
@@ -40,6 +48,7 @@ describe('ItemImportPage', () => {
 
   it('exige a classificação de todos os modificadores antes de confirmar', async () => {
     const { user } = renderWithProviders(<ItemImportPage />);
+    await chooseStandardLeague(user);
     fireEvent.change(screen.getByRole('textbox', { name: 'Texto do item' }), {
       target: {
         value:
@@ -59,6 +68,7 @@ describe('ItemImportPage', () => {
 
   it('permite informar item level ausente na confirmação', async () => {
     const { user } = renderWithProviders(<ItemImportPage />);
+    await chooseStandardLeague(user);
     fireEvent.change(screen.getByRole('textbox', { name: 'Texto do item' }), {
       target: { value: 'New Item\nDivine Crown\nLevelReq: 84' },
     });
@@ -71,6 +81,7 @@ describe('ItemImportPage', () => {
 
   it('permite corrigir campos e propriedades especiais reconhecidas', async () => {
     const { user } = renderWithProviders(<ItemImportPage />);
+    await chooseStandardLeague(user);
     fireEvent.change(screen.getByRole('textbox', { name: 'Texto do item' }), {
       target: {
         value:
@@ -113,6 +124,7 @@ describe('ItemImportPage', () => {
 
   it('mostra erro no campo numérico e mantém linhas não reconhecidas visíveis', async () => {
     const { user } = renderWithProviders(<ItemImportPage />);
+    await chooseStandardLeague(user);
     fireEvent.change(screen.getByRole('textbox', { name: 'Texto do item' }), {
       target: {
         value: 'New Item\nDivine Crown\nItemLevel: 86\nArmour: 100\nLinha desconhecida',

@@ -1,23 +1,21 @@
 {
-  "name": "@poe-crafter/functions",
+  "name": "@poe-crafter/pricing",
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "engines": {
-    "node": "24"
-  },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
-  "devDependencies": {
-    "typescript": "^6.0.3"
-  },
   "dependencies": {
-    "@poe-crafter/pricing": "workspace:*",
-    "@poe-crafter/shared-types": "workspace:*",
-    "firebase-functions": "^7.3.2"
+    "@poe-crafter/shared-types": "workspace:*"
   }
 }

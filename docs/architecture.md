@@ -31,10 +31,11 @@ poe-crafter/
 │       ├── vite.config.ts
 │       └── vitest.config.ts
 ├── functions/
-│   └── src/index.ts          # limite do backend, sem handlers ainda
+│   └── src/index.ts          # limite do backend e handlers HTTP
 ├── packages/
 │   ├── shared-types/         # contratos serializáveis
-│   └── poe-data/             # futuro adaptador RePoE
+│   ├── poe-data/             # futuro adaptador RePoE
+│   └── pricing/              # catálogo e adaptadores de preços
 ├── e2e/
 ├── scripts/
 ├── docs/
@@ -55,17 +56,20 @@ Dependências internas usam `workspace:*`. As permissões atuais são:
 ```text
 apps/web ───────────────> @poe-crafter/shared-types
 functions ──────────────> @poe-crafter/shared-types
+functions ──────────────> @poe-crafter/pricing
 functions ──────────────> @poe-crafter/poe-data
 @poe-crafter/poe-data ──> @poe-crafter/shared-types
+@poe-crafter/pricing ───> @poe-crafter/shared-types
 ```
 
 Uma seta é permissão, não obrigação. O manifesto só declara a dependência quando
 o código a usa. O sentido inverso, ciclos e imports de subpaths internos falham
 em `pnpm check:architecture`.
 
-`crafting-engine`, `planner`, `simulator` e `pricing` permanecem na arquitetura
-aprovada, mas serão criados com seu primeiro consumidor. Não existem pastas ou
-contratos fictícios para esses módulos.
+`crafting-engine`, `planner` e `simulator` permanecem na arquitetura aprovada,
+mas serão criados com seu primeiro consumidor. O package `pricing` já possui o
+adaptador mínimo usado pelo catálogo de ligas; não existem contratos fictícios
+para os demais módulos.
 
 ## Aplicação web
 
@@ -139,7 +143,7 @@ Estado atual:
 
 - `/`: home estrutural.
 - `/new`: importação de item por texto, com parser local e resumo do alvo
-  normalizado.
+  normalizado, precedida pela escolha da liga PC ou do modo manual.
 - `/styleguide`: contrato visual vivo.
 - `*`: página não encontrada, sempre por último.
 - `errorElement`: fallback de carregamento/renderização sem tela branca.
@@ -167,8 +171,8 @@ regras detalhadas ficam em [styleguide.md](styleguide.md).
 ## Backend Firebase
 
 `functions` é um workspace TypeScript privado, preparado para Cloud Functions
-2nd gen em Node 24. No marco atual seu `index.ts` não publica handlers. O SDK
-Firebase entra quando a primeira API real for planejada.
+2nd gen em Node 24. O handler `getActiveLeagues` expõe o catálogo normalizado
+em `/api/leagues` e mantém a chamada ao provider exclusivamente no backend.
 
 Futuras responsabilidades:
 
@@ -212,10 +216,10 @@ legal.
 Buscará e comparará estratégias usando engine, simulator, game data e snapshots
 de preços. Todo candidato volta ao engine antes de ser publicado.
 
-### `pricing` (planejado)
+### `pricing`
 
-Normalizará poe.ninja e overrides manuais em chaos, sem ser fonte de regras de
-crafting.
+Normaliza o catálogo de ligas retornado pelo provider e evoluirá para snapshots
+e overrides manuais em chaos, sem ser fonte de regras de crafting.
 
 ## Fluxo de produto aprovado
 
@@ -300,8 +304,8 @@ Metas do produto:
 
 ## Evolução incremental
 
-O marco estrutural, a importação de item por texto e a confirmação/classificação
-de modificadores (RF-04) estão implementados localmente. A próxima capacidade
-deve começar por um plano específico para escolha de liga (RF-01), antes de
-OCR, planner ou autenticação. Toda decisão relevante gera ou atualiza ADR em
-`docs/decisions`.
+O marco estrutural, a importação de item por texto, a confirmação/classificação
+de modificadores (RF-04) e a escolha de liga PC com fallback manual (RF-01)
+estão implementados localmente. A próxima capacidade deve começar por um plano
+específico para OCR (RF-02), antes de planner ou autenticação. Toda decisão
+relevante gera ou atualiza ADR em `docs/decisions`.

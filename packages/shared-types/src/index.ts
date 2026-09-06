@@ -1,5 +1,11 @@
 export type ItemInfluence = 'searing-exarch' | 'eater-of-worlds';
 
+export interface ActiveLeague {
+  id: string;
+  name: string;
+  platform: 'pc';
+}
+
 export interface ItemAffix {
   raw: string;
   code?: string;

@@ -31,7 +31,17 @@ test('mantém navegação e conteúdo utilizáveis em 360 px', async ({ page }) 
 });
 
 test('importa texto de item e mostra a confirmação normalizada', async ({ page }) => {
+  await page.route('**/leagues', (route) =>
+    route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify({
+        fetchedAt: '2026-09-05T12:00:00.000Z',
+        leagues: [{ id: 'standard', name: 'Standard', platform: 'pc' }],
+      }),
+    }),
+  );
   await page.goto('/new');
+  await page.getByLabel('Liga PC ativa').selectOption('standard');
   await page
     .getByRole('textbox', { name: 'Texto do item' })
     .fill('New Item\nDivine Crown\nItemLevel: 86\nLevelReq: 84\nPrefix: IncreasedLife9');

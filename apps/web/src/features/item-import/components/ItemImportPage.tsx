@@ -1,8 +1,9 @@
 import { ArrowLeft, ClipboardPaste, FileText } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router';
-import type { ItemInfluence, NormalizedItemTarget } from '@poe-crafter/shared-types';
+import type { ActiveLeague, ItemInfluence, NormalizedItemTarget } from '@poe-crafter/shared-types';
 import { Alert, Button, Input, Select, Textarea } from '@/shared/ui';
+import { LeagueSelector } from '@/features/league-selection';
 import {
   confirmItemDraft,
   createItemDraft,
@@ -427,9 +428,13 @@ export function ItemImportPage() {
   const [draft, setDraft] = useState<ItemDraft | null>(null);
   const [issues, setIssues] = useState<ConfirmationIssue[]>([]);
   const [confirmed, setConfirmed] = useState(false);
+  const [selectedLeague, setSelectedLeague] = useState<ActiveLeague | null>(null);
+  const [manualPricing, setManualPricing] = useState(false);
+  const canImport = selectedLeague !== null || manualPricing;
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!canImport) return;
     const nextResult = parseItemText(text);
     setResult(nextResult);
     setIssues([]);
@@ -472,29 +477,67 @@ export function ItemImportPage() {
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-5">
-        <div className="space-y-2">
-          <label
-            htmlFor="item-text"
-            className="flex items-center gap-2 text-sm font-medium text-foreground"
-          >
-            <FileText className="size-4 text-primary" aria-hidden="true" />
-            Texto do item
-          </label>
-          <Textarea
-            id="item-text"
-            value={text}
-            onChange={(event) => setText(event.target.value)}
-            placeholder="New Item\nDivine Crown\n..."
-            aria-describedby="item-text-help"
-            rows={14}
-          />
-          <p id="item-text-help" className="text-xs text-muted-foreground">
-            Um item por vez, no máximo {MAX_ITEM_TEXT_BYTES / 1024} KB.
+      <LeagueSelector
+        onChange={({ league, manual }) => {
+          setSelectedLeague(league);
+          setManualPricing(manual);
+          setResult(null);
+          setDraft(null);
+          setIssues([]);
+          setConfirmed(false);
+        }}
+      />
+
+      {selectedLeague && (
+        <p role="status" className="text-sm text-muted-foreground">
+          Liga selecionada: <strong className="text-foreground">{selectedLeague.name}</strong> (
+          {selectedLeague.id})
+        </p>
+      )}
+      {manualPricing && (
+        <Alert className="border-primary/40">
+          <p className="font-medium text-foreground">Modo de preços manuais</p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            O craft continuará sem custos automáticos até um catálogo de liga e preços estar
+            disponível.
           </p>
-        </div>
-        <Button type="submit">Interpretar item</Button>
-      </form>
+        </Alert>
+      )}
+
+      {!canImport && (
+        <Alert>
+          <p className="font-medium text-foreground">Escolha uma liga para começar</p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            A importação do item será habilitada depois da seleção ou do modo manual.
+          </p>
+        </Alert>
+      )}
+
+      <fieldset disabled={!canImport} className="space-y-5 disabled:opacity-60">
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div className="space-y-2">
+            <label
+              htmlFor="item-text"
+              className="flex items-center gap-2 text-sm font-medium text-foreground"
+            >
+              <FileText className="size-4 text-primary" aria-hidden="true" />
+              Texto do item
+            </label>
+            <Textarea
+              id="item-text"
+              value={text}
+              onChange={(event) => setText(event.target.value)}
+              placeholder="New Item\nDivine Crown\n..."
+              aria-describedby="item-text-help"
+              rows={14}
+            />
+            <p id="item-text-help" className="text-xs text-muted-foreground">
+              Um item por vez, no máximo {MAX_ITEM_TEXT_BYTES / 1024} KB.
+            </p>
+          </div>
+          <Button type="submit">Interpretar item</Button>
+        </form>
+      </fieldset>
 
       {result?.error && (
         <Alert className={result.item ? 'border-primary/40' : 'border-destructive/50'}>

@@ -17,11 +17,10 @@ importam SDKs Firebase.
 O repositório contém somente a fundação local:
 
 - Hosting para `apps/web/dist`.
-- Functions 2nd gen em Node 24, ainda sem handlers.
+- Functions 2nd gen em Node 24, com o handler `getActiveLeagues`.
 - Firestore e Storage deny-all.
 - Emulator Suite para Auth, Firestore, Hosting e Storage no project ID
-  `demo-poe-crafter`. Functions permanece configurado, mas não inicia enquanto
-  não houver handler e SDK.
+  `demo-poe-crafter`. O rewrite `/api/leagues` aponta para `getActiveLeagues`.
 
 `pnpm test:emulators` compila a aplicação, serve o Hosting e confirma que
 requisições anônimas recebem 403 no Firestore e no Storage.
@@ -37,9 +36,15 @@ falha nunca substitui a versão ativa.
 
 ## poe.ninja
 
-Um futuro job diário publicará snapshots imutáveis normalizados em chaos. O
-planner lê snapshots e não chama o provider durante a busca. Falha preserva o
-último snapshot e seu horário.
+O endpoint de ligas consulta poe.ninja somente no backend, normaliza o catálogo
+e devolve ligas PC ativas com `fetchedAt`. Um futuro job diário publicará
+snapshots imutáveis normalizados em chaos; o planner lerá snapshots e não
+chamará o provider durante a busca. Falha preservará o último snapshot e seu
+horário.
+
+Functions aceita `POE_LEAGUES_URL` como override de ambiente para testes ou
+provedores compatíveis; em produção, o padrão é
+`https://poe.ninja/poe1/api/economy/leagues`, o endpoint público de ligas do PoE 1.
 
 ## Cloud Vision
 

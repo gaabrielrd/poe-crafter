@@ -56,7 +56,7 @@ test('rejeita acesso permissivo, projeto fixado e handler prematuro', () => {
     const errors = checkFirebaseConfig(root).join('\n');
     assert.match(errors, /firestore\.rules.*negar/);
     assert.match(errors, /\.firebaserc/);
-    assert.match(errors, /handlers fictícios/);
+    assert.match(errors, /handler não previsto/);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

@@ -50,12 +50,14 @@ export function checkFirebaseConfig(root = defaultRoot) {
   const functionsIndex = join(root, 'functions', 'src', 'index.ts');
   if (!existsSync(functionsIndex)) {
     errors.push('functions/src/index.ts: limite do backend ausente.');
-  } else if (
-    /firebase-functions|onRequest|onCall|onTaskDispatched/.test(
-      readFileSync(functionsIndex, 'utf8'),
-    )
-  ) {
-    errors.push('functions/src/index.ts: não publique handlers fictícios no marco estrutural.');
+  } else {
+    const source = readFileSync(functionsIndex, 'utf8');
+    if (
+      /firebase-functions|onRequest|onCall|onTaskDispatched/.test(source) &&
+      !/getActiveLeagues/.test(source)
+    ) {
+      errors.push('functions/src/index.ts: handler não previsto para este marco.');
+    }
   }
   return errors;
 }

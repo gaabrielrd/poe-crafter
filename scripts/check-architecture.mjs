@@ -11,14 +11,20 @@ const sourceExtensions = new Set(['.ts', '.tsx']);
 const INTERNAL_PACKAGES = new Set([
   '@poe-crafter/shared-types',
   '@poe-crafter/poe-data',
+  '@poe-crafter/pricing',
   '@poe-crafter/functions',
   '@poe-crafter/web',
 ]);
 const ALLOWED_INTERNAL_IMPORTS = {
   web: new Set(['@poe-crafter/shared-types']),
-  functions: new Set(['@poe-crafter/shared-types', '@poe-crafter/poe-data']),
+  functions: new Set([
+    '@poe-crafter/shared-types',
+    '@poe-crafter/poe-data',
+    '@poe-crafter/pricing',
+  ]),
   'shared-types': new Set(),
   'poe-data': new Set(['@poe-crafter/shared-types']),
+  pricing: new Set(['@poe-crafter/shared-types']),
 };
 
 function listSourceFiles(directory) {
@@ -220,6 +226,7 @@ export function checkArchitecture(root = defaultRoot) {
   checkWorkspace(root, 'functions/src', 'functions', errors);
   checkWorkspace(root, 'packages/shared-types/src', 'shared-types', errors);
   checkWorkspace(root, 'packages/poe-data/src', 'poe-data', errors);
+  checkWorkspace(root, 'packages/pricing/src', 'pricing', errors);
   return errors;
 }
 
