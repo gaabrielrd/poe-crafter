@@ -4,6 +4,8 @@
     "noEmit": false,
     "declaration": true,
     "outDir": "dist",
-    "rootDir": "src"
-  }
+    "rootDir": "src",
+    "rewriteRelativeImportExtensions": true
+  },
+  "exclude": ["src/**/*.test.ts"]
 }

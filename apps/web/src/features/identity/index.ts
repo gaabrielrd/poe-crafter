@@ -8,4 +8,4 @@ export {
   getFirebaseApp,
   type AuthGateway,
 } from './services/auth';
-export type { IdentityState, IdentityUser } from './model/identity';
+export type { AccountDeletionReceipt, IdentityState, IdentityUser } from './model/identity';

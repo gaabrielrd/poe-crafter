@@ -6,12 +6,14 @@ import { loadLeagueCatalog } from '../services/league-catalog';
 
 export function LeagueSelector({
   onChange,
+  initialLeague,
 }: {
   onChange: (selection: { league: ActiveLeague | null; manual: boolean }) => void;
+  initialLeague?: ActiveLeague | null;
 }) {
   const selectId = useId();
   const [state, setState] = useState<LeagueCatalogState>({ status: 'loading' });
-  const [selectedId, setSelectedId] = useState('');
+  const [selectedId, setSelectedId] = useState(initialLeague?.id ?? '');
 
   useEffect(() => {
     let mounted = true;

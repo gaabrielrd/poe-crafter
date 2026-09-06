@@ -79,3 +79,25 @@ test('aceita Storage privado por UID com limite de imagem', () => {
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+test('aceita Firestore privado por ownerUid com fallback deny-all', () => {
+  const root = project();
+  try {
+    write(
+      root,
+      'firestore.rules',
+      `match /crafts/{craftId} {
+        allow read, delete: if resource.data.ownerUid == request.auth.uid;
+        allow create: if request.resource.data.ownerUid == request.auth.uid
+          && request.resource.data.keys().hasOnly(['ownerUid']);
+        allow update: if resource.data.ownerUid == request.auth.uid
+          && request.resource.data.ownerUid == resource.data.ownerUid
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['target']);
+      }
+      match /{document=**} { allow read, write: if false; }`,
+    );
+    assert.deepEqual(checkFirebaseConfig(root), []);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});

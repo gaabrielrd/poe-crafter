@@ -1,15 +1,26 @@
 import { ArrowLeft, ClipboardPaste, FileText } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router';
+import { evaluateCraftability, type CraftabilityResult } from '@poe-crafter/crafting-engine';
 import type { ActiveLeague, ItemInfluence, NormalizedItemTarget } from '@poe-crafter/shared-types';
 import { Alert, Button, Input, Select, Textarea } from '@/shared/ui';
 import { LeagueSelector } from '@/features/league-selection';
+import { PlanningConfiguration, type PlanningRequest } from '@/features/planning-configuration';
 import { ScreenshotImporter } from '@/features/screenshot-import';
+import { StrategyPlanning } from '@/features/strategy-planning';
+import {
+  createCraftInput,
+  getDefaultCraftRepository,
+  type CraftRecord,
+  type CraftRepository,
+} from '@/features/craft-persistence';
 import {
   confirmItemDraft,
   createItemDraft,
+  createItemDraftFromConfirmed,
   MODIFIER_CLASSIFICATIONS,
   type ConfirmationIssue,
+  type ConfirmedItemTarget,
   type EditableItemFields,
   type ItemDraft,
   type ModifierClassification,
@@ -423,14 +434,88 @@ function ConfirmationForm({
   );
 }
 
-export function ItemImportPage() {
+export interface ItemImportPageProps {
+  initialCraft?: CraftRecord;
+  repository?: CraftRepository;
+}
+
+function CraftabilityPanel({
+  result,
+  onValidate,
+}: {
+  result: CraftabilityResult | null;
+  onValidate: () => void;
+}) {
+  return (
+    <section aria-labelledby="craftability-title" className="space-y-4 border-t border-border pt-6">
+      <div>
+        <p className="mb-2 font-mono text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+          Primeira validação
+        </p>
+        <h2 id="craftability-title" className="font-display text-2xl text-foreground">
+          Craftabilidade determinística
+        </h2>
+        <p className="mt-2 text-sm leading-6 text-muted-foreground">
+          O resultado cobre somente as regras disponíveis no engine atual. Mecânicas fora desse
+          conjunto nunca são aceitas silenciosamente.
+        </p>
+      </div>
+      <Button type="button" variant="outline" onClick={onValidate}>
+        Validar craftabilidade
+      </Button>
+      {result && (
+        <Alert
+          role={result.status === 'accepted' ? 'status' : 'alert'}
+          className={result.status === 'accepted' ? 'border-primary/40' : 'border-destructive/50'}
+        >
+          <p className="font-medium text-foreground">
+            {result.status === 'accepted'
+              ? 'Alvo aceito pelas regras suportadas.'
+              : result.status === 'unsupported'
+                ? 'O alvo depende de mecânicas ainda não suportadas.'
+                : 'O alvo não passou pela validação estrutural.'}
+          </p>
+          <p className="mt-2 text-xs text-muted-foreground">
+            Engine {result.engineVersion} · {result.conflicts.length} conflito(s)
+          </p>
+          {result.conflicts.length > 0 && (
+            <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+              {result.conflicts.map((item) => (
+                <li key={`${item.code}:${item.path}`}>
+                  <span className="font-medium text-foreground">{item.path}</span>: {item.message}
+                </li>
+              ))}
+            </ul>
+          )}
+        </Alert>
+      )}
+    </section>
+  );
+}
+
+export function ItemImportPage({ initialCraft, repository }: ItemImportPageProps = {}) {
   const [text, setText] = useState('');
-  const [result, setResult] = useState<ItemImportResult | null>(null);
-  const [draft, setDraft] = useState<ItemDraft | null>(null);
+  const [result, setResult] = useState<ItemImportResult | null>(() =>
+    initialCraft ? { item: initialCraft.target.item } : null,
+  );
+  const [draft, setDraft] = useState<ItemDraft | null>(() =>
+    initialCraft ? createItemDraftFromConfirmed(initialCraft.target) : null,
+  );
   const [issues, setIssues] = useState<ConfirmationIssue[]>([]);
-  const [confirmed, setConfirmed] = useState(false);
-  const [selectedLeague, setSelectedLeague] = useState<ActiveLeague | null>(null);
-  const [manualPricing, setManualPricing] = useState(false);
+  const [confirmed, setConfirmed] = useState(Boolean(initialCraft));
+  const [confirmedTarget, setConfirmedTarget] = useState<ConfirmedItemTarget | null>(() =>
+    initialCraft ? initialCraft.target : null,
+  );
+  const [selectedLeague, setSelectedLeague] = useState<ActiveLeague | null>(
+    initialCraft?.league ?? null,
+  );
+  const [manualPricing, setManualPricing] = useState(initialCraft?.manualPricing ?? false);
+  const [savedCraftId, setSavedCraftId] = useState(initialCraft?.id);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [saveMessage, setSaveMessage] = useState('');
+  const [craftability, setCraftability] = useState<CraftabilityResult | null>(null);
+  const [planningRequest, setPlanningRequest] = useState<PlanningRequest | null>(null);
+  const persistence = repository ?? getDefaultCraftRepository();
   const canImport = selectedLeague !== null || manualPricing;
 
   function importText(nextText: string) {
@@ -439,6 +524,11 @@ export function ItemImportPage() {
     setResult(nextResult);
     setIssues([]);
     setConfirmed(false);
+    setConfirmedTarget(null);
+    setSaveStatus('idle');
+    setSaveMessage('');
+    setCraftability(null);
+    setPlanningRequest(null);
     setDraft(nextResult.item ? createItemDraft(nextResult.item) : null);
   }
 
@@ -457,6 +547,44 @@ export function ItemImportPage() {
     }
     setIssues([]);
     setConfirmed(true);
+    setConfirmedTarget(next.item);
+    setSaveStatus('idle');
+    setSaveMessage('');
+    setCraftability(null);
+    setPlanningRequest(null);
+  }
+
+  function validateCraftability() {
+    if (!confirmedTarget) return;
+    setCraftability(
+      evaluateCraftability({
+        schemaVersion: 1,
+        league: selectedLeague?.id ?? null,
+        target: confirmedTarget,
+      }),
+    );
+  }
+
+  async function saveCraft() {
+    if (!confirmedTarget || !persistence) {
+      setSaveStatus('error');
+      setSaveMessage('Configure o Firebase para salvar o craft no histórico privado.');
+      return;
+    }
+    setSaveStatus('saving');
+    setSaveMessage('');
+    try {
+      const input = createCraftInput(confirmedTarget, selectedLeague, manualPricing);
+      const saved = savedCraftId
+        ? await persistence.update(savedCraftId, input)
+        : await persistence.create(input);
+      setSavedCraftId(saved.id);
+      setSaveStatus('saved');
+      setSaveMessage('Craft salvo no histórico privado.');
+    } catch (error: unknown) {
+      setSaveStatus('error');
+      setSaveMessage(error instanceof Error ? error.message : 'Não foi possível salvar o craft.');
+    }
   }
 
   return (
@@ -483,6 +611,7 @@ export function ItemImportPage() {
       </div>
 
       <LeagueSelector
+        initialLeague={selectedLeague}
         onChange={({ league, manual }) => {
           setSelectedLeague(league);
           setManualPricing(manual);
@@ -490,6 +619,12 @@ export function ItemImportPage() {
           setDraft(null);
           setIssues([]);
           setConfirmed(false);
+          setConfirmedTarget(null);
+          setSavedCraftId(undefined);
+          setSaveStatus('idle');
+          setSaveMessage('');
+          setCraftability(null);
+          setPlanningRequest(null);
         }}
       />
 
@@ -567,7 +702,15 @@ export function ItemImportPage() {
         <ConfirmationForm
           draft={draft}
           issues={issues}
-          onChange={setDraft}
+          onChange={(nextDraft) => {
+            setDraft(nextDraft);
+            setConfirmed(false);
+            setConfirmedTarget(null);
+            setSaveStatus('idle');
+            setSaveMessage('');
+            setCraftability(null);
+            setPlanningRequest(null);
+          }}
           onConfirm={handleConfirm}
         />
       )}
@@ -575,8 +718,54 @@ export function ItemImportPage() {
         <Alert className="border-primary/40">
           <p className="font-medium text-foreground">Alvo confirmado.</p>
           <p className="mt-2 text-sm text-muted-foreground">
-            O item está pronto para a validação de craftabilidade na próxima etapa.
+            Valide o alvo antes de avançar para qualquer planejamento.
           </p>
+          <div className="mt-6">
+            <CraftabilityPanel result={craftability} onValidate={validateCraftability} />
+          </div>
+          {craftability?.status === 'accepted' && (
+            <div className="mt-6">
+              <PlanningConfiguration onPrepared={setPlanningRequest} />
+            </div>
+          )}
+          {craftability?.status === 'accepted' && planningRequest && confirmedTarget && (
+            <div className="mt-6">
+              <StrategyPlanning
+                target={confirmedTarget}
+                request={planningRequest}
+                craftability={craftability}
+              />
+            </div>
+          )}
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <Button
+              type="button"
+              onClick={() => void saveCraft()}
+              disabled={saveStatus === 'saving'}
+            >
+              {saveStatus === 'saving'
+                ? 'Salvando…'
+                : savedCraftId
+                  ? 'Atualizar craft'
+                  : 'Salvar craft'}
+            </Button>
+            {savedCraftId && (
+              <Link
+                to={`/craft/${savedCraftId}`}
+                className="text-sm font-medium text-primary underline-offset-4 hover:underline"
+              >
+                Abrir craft salvo
+              </Link>
+            )}
+          </div>
+          {saveMessage && (
+            <p
+              role={saveStatus === 'error' ? 'alert' : 'status'}
+              className={`mt-3 text-sm ${saveStatus === 'error' ? 'text-destructive' : 'text-muted-foreground'}`}
+            >
+              {saveMessage}
+            </p>
+          )}
         </Alert>
       )}
     </div>

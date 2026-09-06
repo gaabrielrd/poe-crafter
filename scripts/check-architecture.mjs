@@ -10,21 +10,30 @@ const defaultRoot = resolve(scriptDir, '..');
 const sourceExtensions = new Set(['.ts', '.tsx']);
 const INTERNAL_PACKAGES = new Set([
   '@poe-crafter/shared-types',
+  '@poe-crafter/crafting-engine',
   '@poe-crafter/poe-data',
   '@poe-crafter/pricing',
+  '@poe-crafter/planner',
   '@poe-crafter/functions',
   '@poe-crafter/web',
 ]);
 const ALLOWED_INTERNAL_IMPORTS = {
-  web: new Set(['@poe-crafter/shared-types']),
+  web: new Set([
+    '@poe-crafter/shared-types',
+    '@poe-crafter/crafting-engine',
+    '@poe-crafter/planner',
+  ]),
   functions: new Set([
     '@poe-crafter/shared-types',
     '@poe-crafter/poe-data',
     '@poe-crafter/pricing',
+    '@poe-crafter/planner',
   ]),
   'shared-types': new Set(),
+  'crafting-engine': new Set(['@poe-crafter/shared-types']),
   'poe-data': new Set(['@poe-crafter/shared-types']),
   pricing: new Set(['@poe-crafter/shared-types']),
+  planner: new Set(['@poe-crafter/shared-types']),
 };
 
 function listSourceFiles(directory) {
@@ -225,8 +234,10 @@ export function checkArchitecture(root = defaultRoot) {
   checkWeb(root, errors);
   checkWorkspace(root, 'functions/src', 'functions', errors);
   checkWorkspace(root, 'packages/shared-types/src', 'shared-types', errors);
+  checkWorkspace(root, 'packages/crafting-engine/src', 'crafting-engine', errors);
   checkWorkspace(root, 'packages/poe-data/src', 'poe-data', errors);
   checkWorkspace(root, 'packages/pricing/src', 'pricing', errors);
+  checkWorkspace(root, 'packages/planner/src', 'planner', errors);
   return errors;
 }
 

@@ -16,6 +16,11 @@ aposentados no marco do monorepo.
 
 Dependências internas usam `workspace:*` e não são publicadas no MVP.
 
+Packages de domínio devem permanecer independentes da web. Ao alterar o
+`crafting-engine`, atualize seus testes puros e o consumidor web somente pela
+API pública (`@poe-crafter/crafting-engine`); não importe arquivos internos do
+package nem mova regras para componentes.
+
 ## Atualizar Node ou pnpm
 
 Altere em conjunto:
@@ -42,4 +47,4 @@ cegas. Confirme `/styleguide`, desktop, 360 px, teclado e reduced motion.
 Execute a atualização no manifesto raiz. Se surgirem scripts de build
 transitivos, não os aprove automaticamente: identifique o pacote, a origem e a
 necessidade. Emuladores devem continuar usando `demo-poe-crafter` e regras
-deny-all até uma feature autorizá-las.
+deny-all fora dos prefixos owner-only explicitamente autorizados por uma feature.

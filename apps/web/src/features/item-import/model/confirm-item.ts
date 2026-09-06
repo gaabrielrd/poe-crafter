@@ -101,6 +101,17 @@ export function createItemDraft(item: NormalizedItemTarget): ItemDraft {
   };
 }
 
+export function createItemDraftFromConfirmed(target: ConfirmedItemTarget): ItemDraft {
+  const draft = createItemDraft(target.item);
+  return {
+    ...draft,
+    modifiers: draft.modifiers.map((modifier) => ({
+      ...modifier,
+      classification: target.classifications[modifier.id] ?? '',
+    })),
+  };
+}
+
 function parseOptionalNumber(value: string, field: string, issues: ConfirmationIssue[]) {
   const trimmed = value.trim();
   if (!trimmed) return undefined;

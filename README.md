@@ -6,8 +6,12 @@ Aplicação web para planejar crafts de itens não únicos do Path of Exile 1, c
 
 Transformar um item-alvo em estratégias de crafting legalmente executáveis,
 comparando probabilidade e custo e acompanhando a execução. O produto completo
-está definido em [docs/prd.md](docs/prd.md); o estado atual entrega a fundação
-técnica anterior à primeira feature de importação.
+está definido em [docs/prd.md](docs/prd.md); o estado atual já importa,
+confirma, valida craftabilidade, prepara um pedido versionado e gera estratégias
+do dataset starter e permite registrar uma execução local append-only, sem ainda
+cobrir o planner completo do jogo; ao concluir, exibe o resumo estimado versus
+real e pode criar uma nova versão sem apagar a execução anterior, enquanto a
+sessão permanece local.
 
 ## Quando usar
 
@@ -117,6 +121,8 @@ O workflow está em `.github/workflows/ci.yml`. Instalações no CI usam
 apps/web/                 # SPA React, rotas, features e sistema visual
 functions/                # limite TypeScript para Functions 2nd gen
 packages/shared-types/    # contratos serializáveis e neutros
+packages/crafting-engine/ # validação determinística de craftabilidade
+packages/planner/         # busca e comparação determinísticas de estratégias
 packages/poe-data/        # futuro adaptador e normalização do RePoE
 e2e/                      # testes do bundle em navegador real
 scripts/                  # verificadores e geradores do repositório
@@ -178,11 +184,33 @@ project ID `demo-poe-crafter` para os emuladores.
 ## Limitações conhecidas
 
 - A fundação já importa texto de item em `/new` e inicia sessão anônima com
-  vínculo opcional somente ao Google, mas ainda não gera planos.
-- A importação, a confirmação/classificação, a escolha da liga PC e o OCR de
-  screenshots atuais são locais, para um item por vez, limitadas ao texto em
-  inglês; histórico e planejamento são próximas fatias.
-- `functions`, `shared-types` e `poe-data` não expõem comportamento de produto.
-- Firestore continua deny-all; Storage aceita apenas o dono em
-  `screenshots/{uid}/` e remove screenshots após 24 horas.
+  vínculo opcional somente ao Google; o planejamento disponível usa o dataset
+  starter versionado e ainda não cobre o conjunto completo do jogo.
+- A importação, a confirmação/classificação, a escolha da liga PC, o OCR de
+  screenshots, o histórico privado, a primeira validação estrutural e a
+  configuração versionada do pedido são locais, para um item por vez,
+  limitados ao texto em inglês; a geração atual usa somente um dataset starter
+  versionado, a explicação detalhada acompanha somente essas receitas e os
+  eventos de execução e o resumo ainda vivem apenas na página aberta.
+- `/settings` permite reautenticar no Google e solicitar a exclusão de conta;
+  o pedido é confirmado imediatamente, revoga o acesso e o job backend conclui
+  a limpeza em até 24 horas. A execução depende do deploy das Functions e
+  falhas continuam visíveis para nova tentativa.
+- `/admin` mostra diagnóstico operacional somente para UIDs Google configurados
+  em `functions/.env` via `POE_ADMIN_UIDS`; usuários sem permissão não recebem
+  dados de operação. O backend e a interface já oferecem importação, validação,
+  publicação, reativação versionada e acesso de suporte a um craft com
+  justificativa e auditoria append-only; o controle de custo ainda não está
+  implementado para integrações reais de Billing, mas o gate operacional já
+  bloqueia OCR e planejamento por estimativa mensal configurável.
+- `functions`, `shared-types` e `poe-data` não expõem comportamento de produto;
+  `crafting-engine` expõe somente a validação determinística inicial e
+  `planner` expõe somente o primeiro contrato de estratégias e encerra jobs
+  não terminais após cinco minutos sem publicar plano parcial.
+- Firestore aceita somente o dono em `crafts/{craftId}` e continua deny-all fora
+  desse caminho; Storage aceita apenas o dono em `screenshots/{uid}/` e remove
+  screenshots após 24 horas; solicitações de exclusão não são acessíveis pelo
+  cliente.
 - Não existe deploy configurado ou autorizado neste marco.
+- O E2E cobre o fluxo crítico em Chromium a partir de 360 px; a matriz completa
+  de navegadores suportados depende dos executáveis disponíveis no ambiente.

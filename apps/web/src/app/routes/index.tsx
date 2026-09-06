@@ -4,6 +4,9 @@ import { NotFound, RouteErrorFallback } from '@/app/components/RouteErrorFallbac
 import { StyleguidePage } from '@/app/styleguide';
 import { HomePage } from '@/features/home';
 import { ItemImportPage } from '@/features/item-import';
+import { CraftPage, HistoryPage } from '@/features/craft-persistence';
+import { SettingsPage } from '@/features/account-settings';
+import { AdminPage } from '@/features/admin-operations';
 
 /**
  * Definicao das rotas, separada do router para permitir montar a mesma
@@ -19,6 +22,22 @@ export const routes: RouteObject[] = [
       {
         path: 'new',
         element: <ItemImportPage />,
+      },
+      {
+        path: 'history',
+        element: <HistoryPage />,
+      },
+      {
+        path: 'craft/:craftId',
+        element: <CraftPage />,
+      },
+      {
+        path: 'settings',
+        element: <SettingsPage />,
+      },
+      {
+        path: 'admin',
+        element: <AdminPage />,
       },
       {
         index: true,

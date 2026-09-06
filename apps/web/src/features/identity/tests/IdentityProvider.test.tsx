@@ -31,6 +31,13 @@ function gatewayThatFails(code: string): AuthGateway {
     linkGoogle: () => {
       throw Object.assign(new Error('failed'), { code });
     },
+    reauthenticateGoogle: () => Promise.resolve(),
+    requestAccountDeletion: () =>
+      Promise.resolve({
+        status: 'pending' as const,
+        requestedAt: '2026-09-06T00:00:00.000Z',
+        scheduledFor: '2026-09-07T00:00:00.000Z',
+      }),
     getIdToken: () => Promise.resolve('token'),
     getCurrentUser: () => ({ uid: 'uid-1', kind: 'anonymous' }),
   };
@@ -93,6 +100,13 @@ describe('identidade', () => {
         current = { uid: 'uid-1', kind: 'google', email: 'a@b.com' };
         return Promise.resolve(current);
       },
+      reauthenticateGoogle: () => Promise.resolve(),
+      requestAccountDeletion: () =>
+        Promise.resolve({
+          status: 'pending' as const,
+          requestedAt: '2026-09-06T00:00:00.000Z',
+          scheduledFor: '2026-09-07T00:00:00.000Z',
+        }),
       getIdToken: () => Promise.resolve('token'),
       getCurrentUser: () => current,
     };

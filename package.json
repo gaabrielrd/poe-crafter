@@ -24,7 +24,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "tsc -p tsconfig.json --noEmit && pnpm -r --if-present typecheck",
-    "test": "pnpm test:coverage && pnpm test:contracts",
+    "test": "pnpm test:coverage && pnpm test:contracts && pnpm --filter @poe-crafter/functions test",
     "test:unit": "pnpm --filter @poe-crafter/web test:unit",
     "test:coverage": "pnpm --filter @poe-crafter/web test:coverage",
     "test:contracts": "node --experimental-strip-types --experimental-specifier-resolution=node --test scripts/*.test.mjs",

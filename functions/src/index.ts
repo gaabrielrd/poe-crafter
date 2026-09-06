@@ -1,3 +1,9 @@
 export { getActiveLeagues } from './api/league-catalog';
 export { getScreenshotOcr } from './api/screenshot-ocr';
+export { requestAccountDeletion } from './api/account-deletion';
+export { getAdminOverview } from './api/admin-overview';
+export { manageAdminDataset } from './api/admin-datasets';
+export { requestAdminCraftSupport } from './api/admin-support';
+export { reserveOperationalCost } from './api/cost-guard';
 export { cleanupExpiredScreenshots } from './scheduled/cleanup-screenshots';
+export { processAccountDeletions } from './scheduled/process-account-deletions';

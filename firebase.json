@@ -5,6 +5,17 @@
     "rewrites": [
       { "source": "/api/leagues", "function": { "functionId": "getActiveLeagues" } },
       { "source": "/api/screenshot-ocr", "function": { "functionId": "getScreenshotOcr" } },
+      { "source": "/api/account-deletion", "function": { "functionId": "requestAccountDeletion" } },
+      { "source": "/api/admin/overview", "function": { "functionId": "getAdminOverview" } },
+      { "source": "/api/admin/datasets", "function": { "functionId": "manageAdminDataset" } },
+      {
+        "source": "/api/admin/support/craft",
+        "function": { "functionId": "requestAdminCraftSupport" }
+      },
+      {
+        "source": "/api/operations/cost-guard",
+        "function": { "functionId": "reserveOperationalCost" }
+      },
       { "source": "**", "destination": "/index.html" }
     ]
   },

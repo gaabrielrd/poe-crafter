@@ -39,11 +39,18 @@ export function checkFirebaseConfig(root = defaultRoot) {
     }
     const rules = readFileSync(path, 'utf8');
     const denyAll = /allow\s+read,\s*write:\s*if\s+false\s*;/.test(rules);
+    const scopedFirestore =
+      rulesFile === 'firestore.rules' &&
+      /match\s+\/crafts\/\{craftId\}/.test(rules) &&
+      /resource\.data\.ownerUid\s*==\s*request\.auth\.uid/.test(rules) &&
+      /request\.resource\.data\.ownerUid\s*==\s*resource\.data\.ownerUid/.test(rules) &&
+      /request\.resource\.data\.keys\(\)\.hasOnly/.test(rules) &&
+      /request\.resource\.data\.diff\(resource\.data\)\.affectedKeys\(\)\.hasOnly/.test(rules);
     const scopedStorage =
       rulesFile === 'storage.rules' &&
       /match\s+\/screenshots\/\{uid\}\/\{fileName\}/.test(rules) &&
       /request\.auth\.uid\s*==\s*uid/.test(rules);
-    if (!denyAll && !scopedStorage) {
+    if (!denyAll && !scopedStorage && !scopedFirestore) {
       errors.push(`${rulesFile}: o marco estrutural deve negar leitura e escrita por padrão.`);
     }
     if (

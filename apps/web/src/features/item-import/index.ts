@@ -8,6 +8,7 @@ export type {
 export {
   confirmItemDraft,
   createItemDraft,
+  createItemDraftFromConfirmed,
   MODIFIER_CLASSIFICATIONS,
   validateItemDraft,
 } from './model/confirm-item';

@@ -5,17 +5,20 @@ import {
   GoogleAuthProvider,
   linkWithPopup,
   onAuthStateChanged,
+  reauthenticateWithPopup,
   signInAnonymously,
   type Auth,
   type User,
 } from 'firebase/auth';
 import { env } from '@/shared/config';
-import type { IdentityUser } from '../model/identity';
+import type { AccountDeletionReceipt, IdentityUser } from '../model/identity';
 
 export interface AuthGateway {
   watch(listener: (user: IdentityUser | null) => void): () => void;
   ensureAnonymous(): Promise<void>;
   linkGoogle(): Promise<IdentityUser>;
+  reauthenticateGoogle(): Promise<void>;
+  requestAccountDeletion(): Promise<AccountDeletionReceipt>;
   getIdToken(): Promise<string>;
   getCurrentUser(): IdentityUser | null;
 }
@@ -75,8 +78,11 @@ class FirebaseAuthGateway implements AuthGateway {
     this.auth = auth;
   }
 
-  watch(listener: (user: IdentityUser | null) => void) {
-    return onAuthStateChanged(this.auth, (user) => listener(user ? mapUser(user) : null));
+  watch(listener: (user: IdentityUser | null) => void): () => void {
+    const unsubscribe: () => void = onAuthStateChanged(this.auth, (user: User | null) =>
+      listener(user ? mapUser(user) : null),
+    );
+    return unsubscribe;
   }
 
   async ensureAnonymous() {
@@ -86,10 +92,46 @@ class FirebaseAuthGateway implements AuthGateway {
   async linkGoogle() {
     const user = this.auth.currentUser;
     if (!user) throw new Error('A sessão ainda está inicializando. Tente novamente.');
-    const result = user.isAnonymous
-      ? await linkWithPopup(user, new GoogleAuthProvider())
-      : { user };
-    return mapUser(result.user);
+    const linkedUser: User = user.isAnonymous
+      ? (await linkWithPopup(user, new GoogleAuthProvider())).user
+      : user;
+    return mapUser(linkedUser);
+  }
+
+  async reauthenticateGoogle() {
+    const user = this.auth.currentUser;
+    if (!user || user.isAnonymous) {
+      throw Object.assign(new Error('Vincule uma conta Google antes de solicitar a exclusão.'), {
+        code: 'auth/google-required',
+      });
+    }
+    await reauthenticateWithPopup(user, new GoogleAuthProvider());
+  }
+
+  async requestAccountDeletion() {
+    const endpoint = env.apiUrl
+      ? `${env.apiUrl.replace(/\/$/, '')}/account-deletion`
+      : '/api/account-deletion';
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        authorization: `Bearer ${await this.getIdToken()}`,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({ confirmation: 'DELETE' }),
+    });
+    const payload: unknown = await response.json();
+    if (!response.ok) {
+      const message =
+        typeof payload === 'object' && payload !== null && 'message' in payload
+          ? String(payload.message)
+          : `A solicitação de exclusão respondeu ${response.status}.`;
+      throw new Error(message);
+    }
+    if (!isAccountDeletionReceipt(payload)) {
+      throw new Error('A solicitação de exclusão retornou dados inválidos.');
+    }
+    return payload;
   }
 
   async getIdToken() {
@@ -132,6 +174,33 @@ class FixtureAuthGateway implements AuthGateway {
     return Promise.resolve(this.user);
   }
 
+  reauthenticateGoogle() {
+    if (this.user.kind !== 'google') {
+      return Promise.reject(
+        Object.assign(new Error('Vincule uma conta Google antes de solicitar a exclusão.'), {
+          code: 'auth/google-required',
+        }),
+      );
+    }
+    return Promise.resolve();
+  }
+
+  requestAccountDeletion() {
+    if (this.user.kind !== 'google') {
+      return Promise.reject(
+        Object.assign(new Error('Vincule uma conta Google antes de solicitar a exclusão.'), {
+          code: 'auth/google-required',
+        }),
+      );
+    }
+    const requestedAt = new Date().toISOString();
+    return Promise.resolve({
+      status: 'pending' as const,
+      requestedAt,
+      scheduledFor: new Date(Date.parse(requestedAt) + 24 * 60 * 60 * 1000).toISOString(),
+    });
+  }
+
   getIdToken() {
     return Promise.resolve('fixture-token');
   }
@@ -159,6 +228,14 @@ class MissingConfigurationAuthGateway implements AuthGateway {
     return Promise.reject(new Error('Configure o Firebase antes de vincular o Google.'));
   }
 
+  reauthenticateGoogle() {
+    return Promise.reject(new Error('Configure o Firebase antes de reautenticar o Google.'));
+  }
+
+  requestAccountDeletion() {
+    return Promise.reject(new Error('Configure o Firebase antes de solicitar a exclusão.'));
+  }
+
   getIdToken() {
     return Promise.reject(new Error('Configure o Firebase antes de processar o screenshot.'));
   }
@@ -183,4 +260,16 @@ export function getDefaultAuthGateway(): AuthGateway {
   if (!firebaseConfig()) return new MissingConfigurationAuthGateway();
   defaultGateway ??= new FirebaseAuthGateway(createFirebaseAuth());
   return defaultGateway;
+}
+
+function isAccountDeletionReceipt(value: unknown): value is AccountDeletionReceipt {
+  if (typeof value !== 'object' || value === null) return false;
+  const candidate = value as Partial<AccountDeletionReceipt>;
+  return (
+    candidate.status === 'pending' &&
+    typeof candidate.requestedAt === 'string' &&
+    !Number.isNaN(Date.parse(candidate.requestedAt)) &&
+    typeof candidate.scheduledFor === 'string' &&
+    !Number.isNaN(Date.parse(candidate.scheduledFor))
+  );
 }

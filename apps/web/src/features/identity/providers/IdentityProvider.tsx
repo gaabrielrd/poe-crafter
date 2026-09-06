@@ -13,6 +13,8 @@ export function IdentityProvider({
   const resolvedGateway = useMemo(() => gateway ?? getDefaultAuthGateway(), [gateway]);
   const [state, setState] = useState<IdentityState>({ status: 'loading' });
   const [linking, setLinking] = useState(false);
+  const [reauthenticating, setReauthenticating] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     const unsubscribe = resolvedGateway.watch((user) => {
@@ -42,6 +44,43 @@ export function IdentityProvider({
     }
   }, [resolvedGateway]);
 
-  const value = useMemo(() => ({ state, linking, linkGoogle }), [linkGoogle, linking, state]);
+  const reauthenticateGoogle = useCallback(async () => {
+    setReauthenticating(true);
+    try {
+      await resolvedGateway.reauthenticateGoogle();
+    } finally {
+      setReauthenticating(false);
+    }
+  }, [resolvedGateway]);
+
+  const requestAccountDeletion = useCallback(async () => {
+    setDeleting(true);
+    try {
+      return await resolvedGateway.requestAccountDeletion();
+    } finally {
+      setDeleting(false);
+    }
+  }, [resolvedGateway]);
+
+  const value = useMemo(
+    () => ({
+      state,
+      linking,
+      linkGoogle,
+      reauthenticating,
+      deleting,
+      reauthenticateGoogle,
+      requestAccountDeletion,
+    }),
+    [
+      deleting,
+      linkGoogle,
+      linking,
+      reauthenticateGoogle,
+      reauthenticating,
+      requestAccountDeletion,
+      state,
+    ],
+  );
   return <IdentityContext.Provider value={value}>{children}</IdentityContext.Provider>;
 }

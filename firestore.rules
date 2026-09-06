@@ -2,6 +2,29 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    match /crafts/{craftId} {
+      allow read, delete: if signedIn() && resource.data.ownerUid == request.auth.uid;
+      allow create: if signedIn()
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.schemaVersion == 1
+        && request.resource.data.status == 'confirmed'
+        && request.resource.data.keys().hasOnly([
+          'ownerUid', 'schemaVersion', 'title', 'league', 'manualPricing',
+          'status', 'target', 'createdAt', 'updatedAt'
+        ]);
+      allow update: if signedIn()
+        && resource.data.ownerUid == request.auth.uid
+        && request.resource.data.ownerUid == resource.data.ownerUid
+        && request.resource.data.schemaVersion == resource.data.schemaVersion
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'title', 'league', 'manualPricing', 'status', 'target', 'updatedAt'
+        ]);
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }

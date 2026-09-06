@@ -1,4 +1,13 @@
-import { Anvil, CircleCheck, FilePlus2, Home, Palette } from 'lucide-react';
+import {
+  Anvil,
+  CircleCheck,
+  FilePlus2,
+  History,
+  Home,
+  Palette,
+  Settings,
+  ShieldCheck,
+} from 'lucide-react';
 import { Link, NavLink, Outlet } from 'react-router';
 import { cn } from '@/shared/lib';
 import { Badge } from '@/shared/ui';
@@ -29,12 +38,15 @@ export function App() {
           </Link>
 
           <nav
-            className="order-3 flex w-full items-center gap-1 sm:order-none sm:ml-auto sm:w-auto"
+            className="order-3 flex w-full flex-wrap items-center gap-1 sm:order-none sm:ml-auto sm:w-auto"
             aria-label="Navegação principal"
           >
             {[
               { to: '/', label: 'Início', icon: Home, end: true },
               { to: '/new', label: 'Novo craft', icon: FilePlus2, end: false },
+              { to: '/history', label: 'Histórico', icon: History, end: false },
+              { to: '/settings', label: 'Configurações', icon: Settings, end: false },
+              { to: '/admin', label: 'Administração', icon: ShieldCheck, end: false },
               { to: '/styleguide', label: 'Styleguide', icon: Palette, end: false },
             ].map(({ to, label, icon: Icon, end }) => (
               <NavLink

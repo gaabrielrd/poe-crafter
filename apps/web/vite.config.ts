@@ -8,6 +8,13 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': resolve(import.meta.dirname, './src'),
+      react: resolve(import.meta.dirname, './node_modules/react'),
+      'react-dom': resolve(import.meta.dirname, './node_modules/react-dom'),
+      'react/jsx-runtime': resolve(import.meta.dirname, './node_modules/react/jsx-runtime.js'),
+      'react/jsx-dev-runtime': resolve(
+        import.meta.dirname,
+        './node_modules/react/jsx-dev-runtime.js',
+      ),
     },
     dedupe: ['react', 'react-dom'],
   },

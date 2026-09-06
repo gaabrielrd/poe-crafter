@@ -2,6 +2,8 @@ import { fireEvent, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { ItemImportPage } from '../components/ItemImportPage';
 import { renderWithProviders } from '@/test/render';
+import { createFixtureAuthGateway } from '@/features/identity';
+import { createFixtureCraftRepository } from '@/features/craft-persistence';
 
 async function chooseStandardLeague(user: ReturnType<typeof renderWithProviders>['user']) {
   const league = await screen.findByRole('combobox', { name: 'Liga PC ativa' });
@@ -79,6 +81,24 @@ describe('ItemImportPage', () => {
     expect(screen.getByText('Alvo confirmado.')).toBeInTheDocument();
   });
 
+  it('valida o alvo confirmado e mostra a versão do engine', async () => {
+    const { user } = renderWithProviders(<ItemImportPage />);
+    await chooseStandardLeague(user);
+    fireEvent.change(screen.getByRole('textbox', { name: 'Texto do item' }), {
+      target: { value: 'New Item\nDivine Crown\nItemLevel: 86\nPrefix: IncreasedLife9' },
+    });
+    await user.click(screen.getByRole('button', { name: 'Interpretar item' }));
+    await user.selectOptions(screen.getByLabelText('Classificação'), 'required');
+    await user.click(screen.getByRole('button', { name: 'Confirmar alvo' }));
+    await user.click(screen.getByRole('button', { name: 'Validar craftabilidade' }));
+
+    const validationStatus = screen
+      .getAllByRole('status')
+      .find((element) => element.textContent?.includes('Alvo aceito'));
+    expect(validationStatus).toHaveTextContent('Alvo aceito pelas regras suportadas');
+    expect(validationStatus).toHaveTextContent('Engine 0.1.0');
+  });
+
   it('permite corrigir campos e propriedades especiais reconhecidas', async () => {
     const { user } = renderWithProviders(<ItemImportPage />);
     await chooseStandardLeague(user);
@@ -137,5 +157,29 @@ describe('ItemImportPage', () => {
     await user.click(screen.getByRole('button', { name: 'Confirmar alvo' }));
     expect(screen.getAllByText('Informe um número válido.')[0]).toBeInTheDocument();
     expect(screen.getByText('Linha desconhecida')).toBeInTheDocument();
+  });
+
+  it('salva explicitamente o alvo confirmado e atualiza o mesmo craft', async () => {
+    const repository = createFixtureCraftRepository(createFixtureAuthGateway());
+    const { user } = renderWithProviders(<ItemImportPage repository={repository} />);
+    await chooseStandardLeague(user);
+    fireEvent.change(screen.getByRole('textbox', { name: 'Texto do item' }), {
+      target: { value: 'New Item\nDivine Crown\nItemLevel: 86\nPrefix: IncreasedLife9' },
+    });
+    await user.click(screen.getByRole('button', { name: 'Interpretar item' }));
+    await user.selectOptions(screen.getByLabelText('Classificação'), 'required');
+    await user.click(screen.getByRole('button', { name: 'Confirmar alvo' }));
+    await user.click(screen.getByRole('button', { name: 'Salvar craft' }));
+
+    expect(await screen.findByText('Craft salvo no histórico privado.')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Abrir craft salvo' })).toHaveAttribute(
+      'href',
+      '/craft/fixture-craft-1',
+    );
+    await user.clear(screen.getByLabelText('Nome da base'));
+    await user.type(screen.getByLabelText('Nome da base'), 'Hubris Circlet');
+    await user.click(screen.getByRole('button', { name: 'Confirmar alvo' }));
+    await user.click(screen.getByRole('button', { name: 'Atualizar craft' }));
+    expect(await screen.findByText('Craft salvo no histórico privado.')).toBeInTheDocument();
   });
 });
