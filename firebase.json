@@ -4,6 +4,7 @@
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
     "rewrites": [
       { "source": "/api/leagues", "function": { "functionId": "getActiveLeagues" } },
+      { "source": "/api/screenshot-ocr", "function": { "functionId": "getScreenshotOcr" } },
       { "source": "**", "destination": "/index.html" }
     ]
   },

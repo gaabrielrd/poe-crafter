@@ -4,6 +4,7 @@ import { Link } from 'react-router';
 import type { ActiveLeague, ItemInfluence, NormalizedItemTarget } from '@poe-crafter/shared-types';
 import { Alert, Button, Input, Select, Textarea } from '@/shared/ui';
 import { LeagueSelector } from '@/features/league-selection';
+import { ScreenshotImporter } from '@/features/screenshot-import';
 import {
   confirmItemDraft,
   createItemDraft,
@@ -432,14 +433,18 @@ export function ItemImportPage() {
   const [manualPricing, setManualPricing] = useState(false);
   const canImport = selectedLeague !== null || manualPricing;
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  function importText(nextText: string) {
     if (!canImport) return;
-    const nextResult = parseItemText(text);
+    const nextResult = parseItemText(nextText);
     setResult(nextResult);
     setIssues([]);
     setConfirmed(false);
     setDraft(nextResult.item ? createItemDraft(nextResult.item) : null);
+  }
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    importText(text);
   }
 
   function handleConfirm() {
@@ -538,6 +543,14 @@ export function ItemImportPage() {
           <Button type="submit">Interpretar item</Button>
         </form>
       </fieldset>
+
+      <ScreenshotImporter
+        disabled={!canImport}
+        onText={(ocrText) => {
+          setText(ocrText);
+          importText(ocrText);
+        }}
+      />
 
       {result?.error && (
         <Alert className={result.item ? 'border-primary/40' : 'border-destructive/50'}>

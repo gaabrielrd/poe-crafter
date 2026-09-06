@@ -52,3 +52,35 @@ test('importa texto de item e mostra a confirmação normalizada', async ({ page
   await page.getByRole('button', { name: 'Confirmar alvo' }).click();
   await expect(page.getByRole('alert')).toContainText('Alvo confirmado');
 });
+
+test('importa screenshot e encaminha o texto extraído ao parser', async ({ page }) => {
+  await page.route('**/leagues', (route) =>
+    route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify({
+        fetchedAt: '2026-09-06T00:00:00.000Z',
+        leagues: [{ id: 'standard', name: 'Standard', platform: 'pc' }],
+      }),
+    }),
+  );
+  await page.route('**/screenshot-ocr', (route) =>
+    route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify({
+        text: 'New Item\nDivine Crown\nItemLevel: 86\nLevelReq: 84\nPrefix: IncreasedLife9',
+        processedAt: '2026-09-06T00:00:00.000Z',
+      }),
+    }),
+  );
+  await page.goto('/new');
+  await page.getByLabel('Liga PC ativa').selectOption('standard');
+  await page.getByLabel('Imagem do item').setInputFiles({
+    name: 'item.png',
+    mimeType: 'image/png',
+    buffer: Buffer.from('fixture'),
+  });
+  await expect(page.getByRole('heading', { name: 'Divine Crown' })).toBeVisible();
+  await expect(
+    page.getByText('Texto extraído. Revise o alvo abaixo antes de confirmar.'),
+  ).toBeVisible();
+});

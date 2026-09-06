@@ -179,9 +179,9 @@ project ID `demo-poe-crafter` para os emuladores.
 
 - A fundação já importa texto de item em `/new`, mas ainda não autentica
   jogadores nem gera planos.
-- A importação, a confirmação/classificação e a escolha da liga PC atuais são
-  locais, para um item por vez, limitadas ao texto em inglês; OCR, histórico e
-  planejamento são próximas fatias.
+- A importação, a confirmação/classificação, a escolha da liga PC e o OCR de
+  screenshots atuais são locais, para um item por vez, limitadas ao texto em
+  inglês; histórico, Storage privado e planejamento são próximas fatias.
 - `functions`, `shared-types` e `poe-data` não expõem comportamento de produto.
 - Firestore e Storage negam toda leitura e escrita até regras de uma feature real
   serem planejadas e testadas.

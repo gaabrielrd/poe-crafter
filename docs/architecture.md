@@ -171,8 +171,9 @@ regras detalhadas ficam em [styleguide.md](styleguide.md).
 ## Backend Firebase
 
 `functions` é um workspace TypeScript privado, preparado para Cloud Functions
-2nd gen em Node 24. O handler `getActiveLeagues` expõe o catálogo normalizado
-em `/api/leagues` e mantém a chamada ao provider exclusivamente no backend.
+2nd gen em Node 24. Os handlers `getActiveLeagues` e `getScreenshotOcr`
+expõem contratos normalizados em `/api/leagues` e `/api/screenshot-ocr`; as
+chamadas a providers permanecem exclusivamente no backend.
 
 Futuras responsabilidades:
 
@@ -238,9 +239,11 @@ Texto ou screenshot
   -> resumo estimado versus real
 ```
 
-O screenshot ficará no Storage por no máximo 24 horas. Cloud Vision produzirá
-texto não confiável, processado pelo mesmo parser do texto colado e sempre
-confirmado pelo jogador. Após 1.000 OCRs no mês, o produto mantém somente texto.
+O screenshot é processado de forma efêmera pelo endpoint de OCR neste marco,
+sem persistência no navegador. A evolução para Storage privado com TTL de 24
+horas depende da feature de identidade/regras. Cloud Vision produzirá texto não
+confiável, processado pelo mesmo parser do texto colado e sempre confirmado pelo
+jogador. Após 1.000 OCRs no mês, o produto mantém somente texto.
 
 ## Game data e preços
 
@@ -307,5 +310,5 @@ Metas do produto:
 O marco estrutural, a importação de item por texto, a confirmação/classificação
 de modificadores (RF-04) e a escolha de liga PC com fallback manual (RF-01)
 estão implementados localmente. A próxima capacidade deve começar por um plano
-específico para OCR (RF-02), antes de planner ou autenticação. Toda decisão
+específico para screenshot/OCR (RF-03), antes de planner ou autenticação. Toda decisão
 relevante gera ou atualiza ADR em `docs/decisions`.

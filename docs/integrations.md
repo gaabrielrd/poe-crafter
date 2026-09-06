@@ -17,10 +17,12 @@ importam SDKs Firebase.
 O repositório contém somente a fundação local:
 
 - Hosting para `apps/web/dist`.
-- Functions 2nd gen em Node 24, com o handler `getActiveLeagues`.
+- Functions 2nd gen em Node 24, com os handlers `getActiveLeagues` e
+  `getScreenshotOcr`.
 - Firestore e Storage deny-all.
 - Emulator Suite para Auth, Firestore, Hosting e Storage no project ID
-  `demo-poe-crafter`. O rewrite `/api/leagues` aponta para `getActiveLeagues`.
+  `demo-poe-crafter`. Os rewrites `/api/leagues` e `/api/screenshot-ocr`
+  apontam para os handlers correspondentes.
 
 `pnpm test:emulators` compila a aplicação, serve o Hosting e confirma que
 requisições anônimas recebem 403 no Firestore e no Storage.
@@ -46,11 +48,15 @@ Functions aceita `POE_LEAGUES_URL` como override de ambiente para testes ou
 provedores compatíveis; em produção, o padrão é
 `https://poe.ninja/poe1/api/economy/leagues`, o endpoint público de ligas do PoE 1.
 
+O OCR exige `POE_OCR_ENABLED=true` no backend; `POE_OCR_FIXTURE_TEXT` existe
+somente para testes locais e emuladores.
+
 ## Cloud Vision
 
-Será usado apenas no backend para OCR, com limite de 1.000 imagens/mês. O texto
-extraído usa o mesmo parser da entrada colada e exige confirmação. Quando a cota
-fecha, texto continua disponível.
+É usado apenas no backend para OCR, com limite de 1.000 imagens/mês. O texto
+extraído usa o mesmo parser da entrada colada e exige confirmação. O endpoint
+processa bytes em memória; Storage privado, TTL e autenticação ficam pendentes
+da próxima feature de identidade. Quando a cota fecha, texto continua disponível.
 
 ## Google Identity
 

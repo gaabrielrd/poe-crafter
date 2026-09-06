@@ -6,6 +6,11 @@ export interface ActiveLeague {
   platform: 'pc';
 }
 
+export interface ScreenshotOcrResult {
+  text: string;
+  processedAt: string;
+}
+
 export interface ItemAffix {
   raw: string;
   code?: string;
