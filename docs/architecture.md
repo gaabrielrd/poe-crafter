@@ -12,7 +12,8 @@ arquivo define onde cada responsabilidade deve viver.
 - Criar módulos somente quando existir um consumidor real.
 - Tratar dados de providers como entrada não confiável, atrás de adaptadores.
 - Preservar planos, datasets e snapshots publicados como artefatos imutáveis.
-- Desenvolver contra emuladores e negar acesso a dados por padrão.
+- Desenvolver contra emuladores e negar acesso a dados por padrão; exceções
+  explícitas devem ser owner-only e limitadas ao prefixo da feature.
 
 ## Estrutura atual
 
@@ -187,7 +188,9 @@ existem apenas no backend.
 
 `firebase.json` configura Hosting, Functions, Firestore, Storage e Emulator
 Suite. O desenvolvimento usa `demo-poe-crafter`; `.firebaserc` pessoal é ignorado
-e nenhum project ID real é versionado. Firestore e Storage começam deny-all.
+e nenhum project ID real é versionado. Firestore permanece deny-all e Storage
+aceita somente o dono autenticado em `screenshots/{uid}/`, com limpeza agendada
+após 24 horas.
 
 ## Packages de domínio
 
@@ -240,10 +243,11 @@ Texto ou screenshot
 ```
 
 O screenshot é processado de forma efêmera pelo endpoint de OCR neste marco,
-sem persistência no navegador. A evolução para Storage privado com TTL de 24
-horas depende da feature de identidade/regras. Cloud Vision produzirá texto não
-confiável, processado pelo mesmo parser do texto colado e sempre confirmado pelo
-jogador. Após 1.000 OCRs no mês, o produto mantém somente texto.
+sem persistência no navegador. A identidade anônima/Google e as regras privadas
+de `screenshots/{uid}/` já formam a fronteira; o upload e a limpeza de 24 horas
+ficam atrás de serviços autenticados. Cloud Vision produzirá texto não confiável, processado
+pelo mesmo parser do texto colado e sempre confirmado pelo jogador. Após 1.000
+OCRs no mês, o produto mantém somente texto.
 
 ## Game data e preços
 
@@ -308,7 +312,7 @@ Metas do produto:
 ## Evolução incremental
 
 O marco estrutural, a importação de item por texto, a confirmação/classificação
-de modificadores (RF-04) e a escolha de liga PC com fallback manual (RF-01)
-estão implementados localmente. A próxima capacidade deve começar por um plano
-específico para screenshot/OCR (RF-03), antes de planner ou autenticação. Toda decisão
-relevante gera ou atualiza ADR em `docs/decisions`.
+de modificadores (RF-04), a escolha de liga PC com fallback manual (RF-01), o
+OCR efêmero e a sessão anônima com vínculo Google (RF-12) estão implementados
+localmente. O próximo plano deve cobrir persistência privada antes do planner.
+Toda decisão relevante gera ou atualiza ADR em `docs/decisions`.

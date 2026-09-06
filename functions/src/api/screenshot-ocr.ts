@@ -1,18 +1,41 @@
 import { ImageAnnotatorClient } from '@google-cloud/vision';
 import { onRequest } from 'firebase-functions/v2/https';
-
-interface ScreenshotOcrResult {
-  text: string;
-  processedAt: string;
-}
+import type { ScreenshotOcrRequest, ScreenshotOcrResult } from '@poe-crafter/shared-types';
 
 export const MAX_SCREENSHOT_BYTES = 8 * 1024 * 1024;
 export const SCREENSHOT_MIME_TYPES = ['image/png', 'image/jpeg', 'image/webp'] as const;
-export const MAX_MONTHLY_OCR = 1_000;
 
-let monthKey = new Date().toISOString().slice(0, 7);
-let monthlyCount = 0;
-let visionClient: ImageAnnotatorClient | undefined;
+function storagePathForUid(storagePath: string, uid: string) {
+  return new RegExp(`^screenshots/${uid}/[A-Za-z0-9_-]{12,64}$`).test(storagePath);
+}
+
+export interface ScreenshotObject {
+  contentType: string;
+  size: number;
+  createdAt: string;
+  download(): Promise<Buffer>;
+  remove(): Promise<void>;
+}
+
+export interface ScreenshotStore {
+  get(path: string): Promise<ScreenshotObject>;
+  list(prefix: string): Promise<ReadonlyArray<ScreenshotObject & { path: string }>>;
+}
+
+export interface VisionGateway {
+  extractText(image: Buffer): Promise<string>;
+}
+
+export interface OcrQuota {
+  reserve(month: string, requestId: string): Promise<boolean>;
+}
+
+export interface ScreenshotProcessorDependencies {
+  store: ScreenshotStore;
+  vision: VisionGateway;
+  quota: OcrQuota;
+  now: () => Date;
+}
 
 export function validateScreenshotRequest(contentType: string, byteLength: number): string | null {
   if (!SCREENSHOT_MIME_TYPES.includes(contentType as (typeof SCREENSHOT_MIME_TYPES)[number])) {
@@ -34,36 +57,136 @@ function hasImageSignature(contentType: string, image: Buffer) {
   );
 }
 
-function currentMonth() {
-  return new Date().toISOString().slice(0, 7);
+function requestBody(value: unknown): ScreenshotOcrRequest | null {
+  if (typeof value !== 'object' || value === null) return null;
+  const body = value as Partial<ScreenshotOcrRequest>;
+  if (typeof body.storagePath !== 'string' || typeof body.requestId !== 'string') return null;
+  return { storagePath: body.storagePath, requestId: body.requestId };
 }
 
-function reserveQuota() {
-  const month = currentMonth();
-  if (month !== monthKey) {
-    monthKey = month;
-    monthlyCount = 0;
+export async function processScreenshotRequest(
+  input: ScreenshotOcrRequest & { uid: string },
+  dependencies: ScreenshotProcessorDependencies,
+): Promise<ScreenshotOcrResult> {
+  if (!storagePathForUid(input.storagePath, input.uid)) {
+    throw Object.assign(new Error('Screenshot não pertence à sessão atual.'), {
+      code: 'forbidden',
+    });
   }
-  if (monthlyCount >= MAX_MONTHLY_OCR) throw new Error('A cota mensal de OCR foi atingida.');
-  monthlyCount += 1;
-}
-
-function imageBody(request: { body: unknown; rawBody?: Buffer }) {
-  const rawBody = request.rawBody;
-  if (rawBody && rawBody.length > 0) return rawBody;
-  if (Buffer.isBuffer(request.body)) return request.body;
-  throw new Error('O corpo da imagem está vazio.');
-}
-
-async function extractText(image: Buffer): Promise<string> {
-  const fixture = process.env.POE_OCR_FIXTURE_TEXT;
-  if (fixture) return fixture;
-  if (process.env.POE_OCR_ENABLED !== 'true') {
-    throw new Error('OCR indisponível: habilite POE_OCR_ENABLED no backend.');
+  const object = await dependencies.store.get(input.storagePath);
+  const validationError = validateScreenshotRequest(object.contentType, object.size);
+  if (validationError) throw Object.assign(new Error(validationError), { code: 'invalid-image' });
+  try {
+    const image = await object.download();
+    if (!hasImageSignature(object.contentType, image)) {
+      throw Object.assign(new Error('O conteúdo não corresponde ao tipo informado.'), {
+        code: 'invalid-image',
+      });
+    }
+    if (
+      !(await dependencies.quota.reserve(
+        dependencies.now().toISOString().slice(0, 7),
+        input.requestId,
+      ))
+    ) {
+      throw Object.assign(new Error('A cota mensal de OCR foi atingida.'), {
+        code: 'quota-exceeded',
+      });
+    }
+    const text = (await dependencies.vision.extractText(image)).trim();
+    if (!text)
+      throw Object.assign(new Error('Não foi possível extrair texto da imagem.'), {
+        code: 'empty-ocr',
+      });
+    return { text, processedAt: dependencies.now().toISOString() };
+  } finally {
+    await object.remove().catch(() => undefined);
   }
-  visionClient ??= new ImageAnnotatorClient();
-  const [result] = await visionClient.documentTextDetection({ image: { content: image } });
-  return result.fullTextAnnotation?.text?.trim() ?? '';
+}
+
+type AdminBucket = {
+  file(path: string): {
+    getMetadata(): Promise<
+      [
+        {
+          contentType?: string;
+          size?: string | number;
+          timeCreated?: string;
+          metadata?: Record<string, unknown>;
+        },
+        unknown,
+      ]
+    >;
+    download(): Promise<[Buffer]>;
+    delete(options?: { ignoreNotFound?: boolean }): Promise<unknown>;
+  };
+  getFiles(options: { prefix: string }): Promise<
+    [
+      Array<{
+        name: string;
+        metadata: { timeCreated?: string; metadata?: Record<string, unknown> };
+      }>,
+      unknown,
+      unknown,
+    ]
+  >;
+};
+
+class AdminScreenshotStore implements ScreenshotStore {
+  private readonly bucket: AdminBucket;
+
+  constructor(bucket: AdminBucket) {
+    this.bucket = bucket;
+  }
+
+  async get(path: string) {
+    const file = this.bucket.file(path);
+    const [metadata] = await file.getMetadata();
+    const createdAt = metadata.metadata?.createdAt;
+    return {
+      contentType: metadata.contentType ?? '',
+      size: Number(metadata.size ?? 0),
+      createdAt:
+        typeof createdAt === 'string'
+          ? createdAt
+          : (metadata.timeCreated ?? new Date(0).toISOString()),
+      download: async () => (await file.download())[0],
+      remove: async () => {
+        await file.delete({ ignoreNotFound: true });
+      },
+    } satisfies ScreenshotObject;
+  }
+
+  async list(prefix: string) {
+    const [files] = await this.bucket.getFiles({ prefix });
+    return Promise.all(
+      files.map(async (file) => ({ ...(await this.get(file.name)), path: file.name })),
+    );
+  }
+}
+
+class CloudVisionGateway implements VisionGateway {
+  private readonly client = new ImageAnnotatorClient();
+
+  async extractText(image: Buffer) {
+    const [result] = await this.client.documentTextDetection({ image: { content: image } });
+    return result.fullTextAnnotation?.text ?? '';
+  }
+}
+
+function errorStatus(code: unknown) {
+  switch (code) {
+    case 'forbidden':
+      return 403;
+    case 'quota-exceeded':
+      return 429;
+    case 'invalid-image':
+      return 415;
+    case 'empty-ocr':
+      return 422;
+    default:
+      return 503;
+  }
 }
 
 export const getScreenshotOcr = onRequest(async (request, response) => {
@@ -72,51 +195,44 @@ export const getScreenshotOcr = onRequest(async (request, response) => {
     response.status(405).json({ code: 'method-not-allowed', message: 'Use POST.' });
     return;
   }
-
-  const contentType = request.get('content-type')?.split(';', 1)[0]?.trim() ?? '';
-  if (validateScreenshotRequest(contentType, 1)) {
-    response
-      .status(415)
-      .json({ code: 'unsupported-media-type', message: 'Use PNG, JPEG ou WebP.' });
+  const authorization = request.get('authorization') ?? '';
+  if (!authorization.startsWith('Bearer ')) {
+    response.status(401).json({ code: 'unauthenticated', message: 'Sessão Firebase ausente.' });
     return;
   }
-
-  let image: Buffer;
+  let decoded;
   try {
-    image = imageBody(request);
-  } catch (error: unknown) {
-    response.status(400).json({
-      code: 'invalid-image',
-      message: error instanceof Error ? error.message : 'Imagem inválida.',
-    });
+    const { adminAuth } = await import('../services/firebase-admin');
+    decoded = await adminAuth().verifyIdToken(authorization.slice('Bearer '.length));
+  } catch {
+    response.status(401).json({ code: 'unauthenticated', message: 'Sessão Firebase inválida.' });
     return;
   }
-  if (validateScreenshotRequest(contentType, image.length)) {
+  const body = requestBody(request.body);
+  if (!body || !storagePathForUid(body.storagePath, decoded.uid)) {
     response
-      .status(413)
-      .json({ code: 'image-too-large', message: 'A imagem deve ter no máximo 8 MB.' });
+      .status(400)
+      .json({ code: 'invalid-request', message: 'Referência de screenshot inválida.' });
     return;
   }
-  if (!hasImageSignature(contentType, image)) {
-    response
-      .status(415)
-      .json({ code: 'invalid-image', message: 'O conteúdo não corresponde ao tipo informado.' });
-    return;
-  }
-
   try {
-    reserveQuota();
-    const text = await extractText(image);
-    if (!text) {
-      response
-        .status(422)
-        .json({ code: 'empty-ocr', message: 'Não foi possível extrair texto da imagem.' });
-      return;
-    }
-    const result: ScreenshotOcrResult = { text, processedAt: new Date().toISOString() };
+    const [{ adminBucket }, { FirestoreOcrQuota }] = await Promise.all([
+      import('../services/firebase-admin'),
+      import('../services/ocr-quota'),
+    ]);
+    const result = await processScreenshotRequest(
+      { ...body, uid: decoded.uid },
+      {
+        store: new AdminScreenshotStore(adminBucket()),
+        vision: new CloudVisionGateway(),
+        quota: new FirestoreOcrQuota(),
+        now: () => new Date(),
+      },
+    );
     response.status(200).json(result);
   } catch (error: unknown) {
+    const code = error instanceof Error && 'code' in error ? error.code : undefined;
     const message = error instanceof Error ? error.message : 'Falha ao processar OCR.';
-    response.status(503).json({ code: 'ocr-unavailable', message });
+    response.status(errorStatus(code)).json({ code: code ?? 'ocr-unavailable', message });
   }
 });

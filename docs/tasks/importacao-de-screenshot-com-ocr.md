@@ -1,6 +1,6 @@
 # Importação de screenshot com OCR
 
-**Status:** Implementado — OCR efêmero; Storage/TTL e identidade pendentes
+**Status:** Implementado — OCR efêmero com Storage privado e TTL de 24 horas
 **Origem:** RF-03 e CA-02 do [PRD](../prd.md)
 **Dependências:** [Escolha de liga PC ativa](escolha-de-liga-pc.md) e
 [confirmação/classificação](confirmacao-e-classificacao-de-modificadores.md)
@@ -29,8 +29,7 @@ confirmação já usados no texto colado.
 
 ## Não escopo
 
-- Login Google, sessão anônima ou histórico durável; a proteção de acesso deve
-  usar o mecanismo disponível no backend até a feature de identidade.
+- Histórico durável e sincronização de crafts; a imagem continua efêmera.
 - Melhorias no parser, reconhecimento semântico de tiers ou suporte a idiomas
   além do inglês.
 - OCR local, APIs da GGG, treinamento de modelo ou correção automática de texto.
@@ -45,9 +44,8 @@ confirmação já usados no texto colado.
 - O upload será feito para um caminho privado e temporário do Cloud Storage;
   uma função autenticada disparará o OCR e removerá o arquivo ao concluir ou
   pelo TTL de 24 horas.
-- Como o projeto ainda não possui identidade nem regras de Storage, o primeiro
-  passo de implementação precisa definir a credencial/sessão mínima e as regras
-  deny-by-default antes de liberar o fluxo de produção.
+- A identidade anônima/Google e as regras owner-only já existem; o backend valida
+  o token antes de acessar o objeto administrativo.
 - Em testes locais, Storage e Vision serão substituídos por emuladores ou
   adaptadores determinísticos; nenhuma chamada paga deve ocorrer na suíte.
 - A cota será controlada por um contador backend idempotente, não por estado

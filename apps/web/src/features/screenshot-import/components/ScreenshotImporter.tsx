@@ -27,7 +27,16 @@ export function ScreenshotImporter({
     setState('uploading');
     setMessage('Enviando imagem para OCR…');
     try {
-      const result = await submitScreenshot(file);
+      const result = await submitScreenshot(file, {
+        onProgress: (stage, progress) => {
+          if (stage === 'uploading') {
+            const percent = progress === undefined ? '' : ` ${Math.round(progress * 100)}%`;
+            setMessage(`Enviando imagem para OCR…${percent}`);
+          } else {
+            setMessage('Processando imagem com OCR…');
+          }
+        },
+      });
       onText(result.text);
       setState('success');
       setMessage('Texto extraído. Revise o alvo abaixo antes de confirmar.');

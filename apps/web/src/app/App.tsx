@@ -2,10 +2,12 @@ import { Anvil, CircleCheck, FilePlus2, Home, Palette } from 'lucide-react';
 import { Link, NavLink, Outlet } from 'react-router';
 import { cn } from '@/shared/lib';
 import { Badge } from '@/shared/ui';
+import { IdentityStatus, useIdentity } from '@/features/identity';
 
 const PROJECT_NAME = 'PoE Crafting Planner';
 
 export function App() {
+  const identity = useIdentity();
   return (
     <div className="app-shell min-h-svh bg-background text-foreground">
       <header className="enter-header border-b border-border/80 bg-background/90 backdrop-blur-xl">
@@ -58,6 +60,13 @@ export function App() {
             <CircleCheck className="size-3.5 text-success" aria-hidden="true" />
             Fundação pronta
           </Badge>
+        </div>
+        <div className="mx-auto flex max-w-6xl justify-end px-5 pb-4 sm:px-8">
+          <IdentityStatus
+            state={identity.state}
+            linking={identity.linking}
+            onLinkGoogle={() => void identity.linkGoogle()}
+          />
         </div>
       </header>
 

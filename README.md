@@ -177,12 +177,12 @@ project ID `demo-poe-crafter` para os emuladores.
 
 ## Limitações conhecidas
 
-- A fundação já importa texto de item em `/new`, mas ainda não autentica
-  jogadores nem gera planos.
+- A fundação já importa texto de item em `/new` e inicia sessão anônima com
+  vínculo opcional somente ao Google, mas ainda não gera planos.
 - A importação, a confirmação/classificação, a escolha da liga PC e o OCR de
   screenshots atuais são locais, para um item por vez, limitadas ao texto em
-  inglês; histórico, Storage privado e planejamento são próximas fatias.
+  inglês; histórico e planejamento são próximas fatias.
 - `functions`, `shared-types` e `poe-data` não expõem comportamento de produto.
-- Firestore e Storage negam toda leitura e escrita até regras de uma feature real
-  serem planejadas e testadas.
+- Firestore continua deny-all; Storage aceita apenas o dono em
+  `screenshots/{uid}/` e remove screenshots após 24 horas.
 - Não existe deploy configurado ou autorizado neste marco.

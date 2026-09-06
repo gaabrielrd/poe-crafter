@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { RouterProvider } from 'react-router';
 import '@fontsource-variable/archivo';
 import { router } from './app/routes';
+import { IdentityProvider } from './app/providers';
 // Valida as variaveis de ambiente antes de montar a aplicacao: uma
 // configuracao ausente ou malformada falha aqui, com mensagem clara, em vez
 // de virar `undefined` em algum ponto distante do codigo.
@@ -17,6 +18,8 @@ if (!rootElement) {
 
 createRoot(rootElement).render(
   <StrictMode>
-    <RouterProvider router={router} />
+    <IdentityProvider>
+      <RouterProvider router={router} />
+    </IdentityProvider>
   </StrictMode>,
 );

@@ -38,8 +38,20 @@ export function checkFirebaseConfig(root = defaultRoot) {
       continue;
     }
     const rules = readFileSync(path, 'utf8');
-    if (!/allow\s+read,\s*write:\s*if\s+false\s*;/.test(rules)) {
+    const denyAll = /allow\s+read,\s*write:\s*if\s+false\s*;/.test(rules);
+    const scopedStorage =
+      rulesFile === 'storage.rules' &&
+      /match\s+\/screenshots\/\{uid\}\/\{fileName\}/.test(rules) &&
+      /request\.auth\.uid\s*==\s*uid/.test(rules);
+    if (!denyAll && !scopedStorage) {
       errors.push(`${rulesFile}: o marco estrutural deve negar leitura e escrita por padrão.`);
+    }
+    if (
+      rulesFile === 'storage.rules' &&
+      scopedStorage &&
+      !/8\s*\*\s*1024\s*\*\s*1024/.test(rules)
+    ) {
+      errors.push('storage.rules: screenshots devem limitar o tamanho a 8 MiB.');
     }
   }
 
@@ -65,7 +77,7 @@ export function checkFirebaseConfig(root = defaultRoot) {
 function main() {
   const errors = checkFirebaseConfig();
   if (errors.length === 0) {
-    console.log('Configuração Firebase estrutural OK: emuladores e regras deny-all.');
+    console.log('Configuração Firebase estrutural OK: emuladores e regras privadas.');
     return;
   }
   console.error('Configuração Firebase FALHOU:\n');

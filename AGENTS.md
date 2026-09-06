@@ -63,7 +63,7 @@
 
 - Nunca faça commit de segredos, `.env.local`, `.firebaserc` ou service account.
 - Use `demo-poe-crafter` no Emulator Suite.
-- Mantenha Firestore e Storage deny-all até a feature liberar acesso com testes.
+- Mantenha o Firestore deny-all. O Storage só pode liberar `screenshots/{uid}/{fileName}` para o próprio UID autenticado, com limite de 8 MiB e tipo `image/*`; os demais caminhos seguem deny-all.
 - Não acesse projeto Firebase real sem autorização explícita.
 
 ## Armazenamento e APIs

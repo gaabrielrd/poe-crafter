@@ -20,6 +20,13 @@ export interface Env {
   readonly isProduction: boolean;
   /** Base da API, quando o projeto usa uma. */
   readonly apiUrl: string | undefined;
+  readonly firebaseApiKey: string | undefined;
+  readonly firebaseAuthDomain: string | undefined;
+  readonly firebaseProjectId: string | undefined;
+  readonly firebaseStorageBucket: string | undefined;
+  readonly firebaseAppId: string | undefined;
+  readonly firebaseAuthEmulator: boolean;
+  readonly authFixture: boolean;
 }
 
 export class EnvValidationError extends Error {
@@ -54,6 +61,11 @@ function readUrl(raw: ImportMetaEnv, key: string, problems: string[]): string | 
   }
 }
 
+function readBoolean(raw: ImportMetaEnv, key: string): boolean {
+  const value = readOptional(raw, key);
+  return value === 'true' || value === '1';
+}
+
 /**
  * Monta o objeto de configuracao a partir de um `import.meta.env`.
  * Exportado separadamente para permitir teste sem depender do ambiente real.
@@ -77,6 +89,13 @@ export function createEnv(raw: ImportMetaEnv): Env {
     mode: raw.MODE,
     isProduction: raw.PROD,
     apiUrl,
+    firebaseApiKey: readOptional(raw, 'VITE_FIREBASE_API_KEY'),
+    firebaseAuthDomain: readOptional(raw, 'VITE_FIREBASE_AUTH_DOMAIN'),
+    firebaseProjectId: readOptional(raw, 'VITE_FIREBASE_PROJECT_ID'),
+    firebaseStorageBucket: readOptional(raw, 'VITE_FIREBASE_STORAGE_BUCKET'),
+    firebaseAppId: readOptional(raw, 'VITE_FIREBASE_APP_ID'),
+    firebaseAuthEmulator: readBoolean(raw, 'VITE_FIREBASE_AUTH_EMULATOR'),
+    authFixture: readBoolean(raw, 'VITE_AUTH_FIXTURE'),
   };
 }
 

@@ -70,10 +70,11 @@ regra própria; o fluxo que os consome continua testado.
 
 ## Firebase
 
-O marco estrutural verifica configuração válida e exercita as regras deny-all
-no Emulator Suite sem acessar produção. Quando uma feature liberar Firestore ou
-Storage, amplie `pnpm test:emulators` antes da regra permissiva. Use o project ID
-`demo-poe-crafter` e nunca credenciais reais.
+O marco estrutural verifica configuração válida; Firestore continua deny-all e
+Storage libera somente `screenshots/{uid}/` ao próprio UID. `pnpm
+test:emulators` inicia Auth, Hosting, Firestore e Storage no project ID
+`demo-poe-crafter` quando o Firebase CLI local está funcional. Nunca use
+credenciais reais na suíte.
 
 ## Reprodutibilidade
 

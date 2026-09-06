@@ -30,6 +30,15 @@ test('mantém navegação e conteúdo utilizáveis em 360 px', async ({ page }) 
   await expect(page.getByRole('link', { name: 'Página inicial' })).toBeFocused();
 });
 
+test('inicia sessão anônima e vincula somente Google preservando o UID', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.getByText('Sessão anônima')).toBeVisible();
+  await page.getByRole('button', { name: 'Vincular Google' }).click();
+  await expect(page.getByText('Google conectado')).toBeVisible();
+  await expect(page.getByText('fixture@example.com')).toBeVisible();
+  await expect(page.getByText('Sessão anônima')).not.toBeVisible();
+});
+
 test('importa texto de item e mostra a confirmação normalizada', async ({ page }) => {
   await page.route('**/leagues', (route) =>
     route.fulfill({
@@ -50,7 +59,7 @@ test('importa texto de item e mostra a confirmação normalizada', async ({ page
   await expect(page.getByText('86', { exact: true })).toBeVisible();
   await page.getByLabel('Classificação').selectOption('required');
   await page.getByRole('button', { name: 'Confirmar alvo' }).click();
-  await expect(page.getByRole('alert')).toContainText('Alvo confirmado');
+  await expect(page.getByRole('alert').filter({ hasText: 'Alvo confirmado' })).toBeVisible();
 });
 
 test('importa screenshot e encaminha o texto extraído ao parser', async ({ page }) => {

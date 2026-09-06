@@ -61,3 +61,21 @@ test('rejeita acesso permissivo, projeto fixado e handler prematuro', () => {
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+test('aceita Storage privado por UID com limite de imagem', () => {
+  const root = project();
+  try {
+    write(
+      root,
+      'storage.rules',
+      `match /screenshots/{uid}/{fileName} {
+        allow read, delete: if request.auth != null && request.auth.uid == uid;
+        allow create, update: if request.auth.uid == uid && request.resource.size <= 8 * 1024 * 1024;
+      }
+      match /{path=**} { allow read, write: if false; }`,
+    );
+    assert.deepEqual(checkFirebaseConfig(root), []);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});

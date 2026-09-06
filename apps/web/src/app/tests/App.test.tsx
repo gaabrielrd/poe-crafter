@@ -4,10 +4,15 @@ import { RouterProvider, createMemoryRouter, type RouteObject } from 'react-rout
 import { App } from '@/app/App';
 import { RouteErrorFallback } from '@/app/components/RouteErrorFallback';
 import { routes } from '@/app/routes';
+import { IdentityProvider, createFixtureAuthGateway } from '@/features/identity';
 
 function renderAt(path: string, definitions: RouteObject[] = routes) {
   const router = createMemoryRouter(definitions, { initialEntries: [path] });
-  return render(<RouterProvider router={router} />);
+  return render(
+    <IdentityProvider gateway={createFixtureAuthGateway()}>
+      <RouterProvider router={router} />
+    </IdentityProvider>,
+  );
 }
 
 /**

@@ -19,16 +19,20 @@ O repositório contém somente a fundação local:
 - Hosting para `apps/web/dist`.
 - Functions 2nd gen em Node 24, com os handlers `getActiveLeagues` e
   `getScreenshotOcr`.
-- Firestore e Storage deny-all.
+- Firestore permanece deny-all; Storage aceita apenas o dono autenticado em
+  `screenshots/{uid}/`, com imagens de até 8 MiB e TTL operacional de 24 horas.
 - Emulator Suite para Auth, Firestore, Hosting e Storage no project ID
   `demo-poe-crafter`. Os rewrites `/api/leagues` e `/api/screenshot-ocr`
   apontam para os handlers correspondentes.
 
 `pnpm test:emulators` compila a aplicação, serve o Hosting e confirma que
-requisições anônimas recebem 403 no Firestore e no Storage.
+requisições sem autorização recebem 403 no Firestore e no Storage. O fluxo de
+OCR autenticado usa fixture de Vision nos testes E2E; Auth/Storage Emulator é
+habilitado quando o Firebase CLI local está funcional.
 
-IDs e aliases reais ficam em `.firebaserc`, ignorado. Auth anônimo/Google,
-App Check, coleções e uploads entram com suas features e testes de rules.
+IDs e aliases reais ficam em `.firebaserc`, ignorado. Auth anônimo/Google está
+disponível no app web. App Check, coleções e uploads entram com suas próprias
+features e testes de rules.
 
 ## RePoE
 
@@ -55,8 +59,9 @@ somente para testes locais e emuladores.
 
 É usado apenas no backend para OCR, com limite de 1.000 imagens/mês. O texto
 extraído usa o mesmo parser da entrada colada e exige confirmação. O endpoint
-processa bytes em memória; Storage privado, TTL e autenticação ficam pendentes
-da próxima feature de identidade. Quando a cota fecha, texto continua disponível.
+processa objetos temporários no Storage privado, remove o objeto após o OCR e
+mantém uma limpeza agendada para TTL de 24 horas. Quando a cota fecha, texto
+continua disponível.
 
 ## Google Identity
 

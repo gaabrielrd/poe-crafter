@@ -11,6 +11,11 @@ export interface ScreenshotOcrResult {
   processedAt: string;
 }
 
+export interface ScreenshotOcrRequest {
+  storagePath: string;
+  requestId: string;
+}
+
 export interface ItemAffix {
   raw: string;
   code?: string;
