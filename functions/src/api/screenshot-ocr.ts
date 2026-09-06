@@ -1,6 +1,7 @@
 import { ImageAnnotatorClient } from '@google-cloud/vision';
 import { onRequest } from 'firebase-functions/v2/https';
 import type { ScreenshotOcrRequest, ScreenshotOcrResult } from '@poe-crafter/shared-types';
+import type { OperationalBudget } from '../services/operational-budget';
 
 export const MAX_SCREENSHOT_BYTES = 8 * 1024 * 1024;
 export const SCREENSHOT_MIME_TYPES = ['image/png', 'image/jpeg', 'image/webp'] as const;
@@ -34,6 +35,7 @@ export interface ScreenshotProcessorDependencies {
   store: ScreenshotStore;
   vision: VisionGateway;
   quota: OcrQuota;
+  costBudget?: OperationalBudget;
   now: () => Date;
 }
 
@@ -82,6 +84,16 @@ export async function processScreenshotRequest(
       throw Object.assign(new Error('O conteúdo não corresponde ao tipo informado.'), {
         code: 'invalid-image',
       });
+    }
+    if (dependencies.costBudget) {
+      const cost = await dependencies.costBudget.reserve(
+        'ocr',
+        input.requestId,
+        dependencies.now(),
+      );
+      if (!cost.allowed) {
+        throw Object.assign(new Error(cost.message), { code: 'cost-protection' });
+      }
     }
     if (
       !(await dependencies.quota.reserve(
@@ -180,6 +192,8 @@ function errorStatus(code: unknown) {
       return 403;
     case 'quota-exceeded':
       return 429;
+    case 'cost-protection':
+      return 429;
     case 'invalid-image':
       return 415;
     case 'empty-ocr':
@@ -216,16 +230,19 @@ export const getScreenshotOcr = onRequest(async (request, response) => {
     return;
   }
   try {
-    const [{ adminBucket }, { FirestoreOcrQuota }] = await Promise.all([
-      import('../services/firebase-admin'),
-      import('../services/ocr-quota'),
-    ]);
+    const [{ adminBucket }, { FirestoreOcrQuota }, { FirestoreOperationalBudget }] =
+      await Promise.all([
+        import('../services/firebase-admin'),
+        import('../services/ocr-quota'),
+        import('../services/operational-budget'),
+      ]);
     const result = await processScreenshotRequest(
       { ...body, uid: decoded.uid },
       {
         store: new AdminScreenshotStore(adminBucket()),
         vision: new CloudVisionGateway(),
         quota: new FirestoreOcrQuota(),
+        costBudget: new FirestoreOperationalBudget(),
         now: () => new Date(),
       },
     );
