@@ -32,7 +32,7 @@ Indicado para:
 
 ## Pré-requisitos
 
-- Node.js 24.14.1 (use a versão de `.nvmrc`).
+- Node.js 24.19.0 (use a versão de `.nvmrc`).
 - pnpm 11.19.0 (use a versão exata de `packageManager`).
 - Git.
 - Java 21 para os emuladores Firestore e Storage.
@@ -43,7 +43,7 @@ Indicado para:
 pnpm install --frozen-lockfile
 ```
 
-O pnpm executa builds transitivos somente para `re2` e `protobufjs`, dependências
+O pnpm executa builds transitivos somente para `@firebase/util`, `re2` e `protobufjs`, dependências
 do Firebase CLI revisadas e declaradas em `pnpm-workspace.yaml`.
 
 ## Execução
