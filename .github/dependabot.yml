@@ -13,6 +13,8 @@ updates:
     groups:
       # O ecossistema npm do Dependabot compreende o pnpm-lock.yaml e os
       # manifestos de todos os workspaces declarados na raiz.
+      vitest:
+        patterns: ['vitest', '@vitest/*']
       dev-dependencies:
         dependency-type: development
         update-types: ['minor', 'patch']

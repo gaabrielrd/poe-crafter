@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { screen } from '@testing-library/react';
 import { IdentityProvider, useIdentity, createFixtureAuthGateway } from '@/features/identity';
 import { renderWithProviders } from '@/test/render';
@@ -9,6 +9,26 @@ import {
 } from '../services/auth';
 import { IdentityStatus } from '../components/IdentityStatus';
 import { identityErrorMessage } from '../model/identity';
+
+// A configuração do teste é explícita e aponta somente para o projeto demo.
+// O teste de seleção não autentica nem acessa serviços Firebase reais.
+vi.mock('@/shared/config', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/shared/config')>();
+  return {
+    ...actual,
+    env: {
+      ...actual.env,
+      firebaseApiKey: 'demo-api-key',
+      firebaseAuthDomain: 'demo-poe-crafter.firebaseapp.com',
+      firebaseProjectId: 'demo-poe-crafter',
+      firebaseStorageBucket: 'demo-poe-crafter.appspot.com',
+      firebaseAppId: 'demo-app',
+      firebaseAuthEmulator: true,
+      authFixture: false,
+      isProduction: false,
+    },
+  };
+});
 
 function Harness() {
   const identity = useIdentity();

@@ -2,7 +2,8 @@
 
 ## Status
 
-Aceita em 2026-09-05.
+Aceita em 2026-09-05. Versão patch substituída pela
+[ADR 0039](0039-ci-checkout-limpo.md).
 
 ## Contexto
 

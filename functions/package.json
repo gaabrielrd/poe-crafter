@@ -17,7 +17,7 @@
     "typescript": "^6.0.3"
   },
   "dependencies": {
-    "@google-cloud/vision": "^5.3.7",
+    "@google-cloud/vision": "^6.0.0",
     "@poe-crafter/planner": "workspace:*",
     "@poe-crafter/pricing": "workspace:*",
     "@poe-crafter/shared-types": "workspace:*",

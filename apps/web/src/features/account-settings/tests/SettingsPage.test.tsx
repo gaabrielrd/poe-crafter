@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { screen } from '@testing-library/react';
 import { IdentityProvider, createFixtureAuthGateway, type AuthGateway } from '@/features/identity';
 import { renderWithProviders } from '@/test/render';
@@ -16,6 +16,7 @@ async function renderGoogleSettings(gateway: AuthGateway = createFixtureAuthGate
 }
 
 describe('SettingsPage', () => {
+  afterEach(() => vi.useRealTimers());
   it('orienta uma sessão anônima a vincular Google e não expõe exclusão', async () => {
     renderWithProviders(
       <IdentityProvider gateway={createFixtureAuthGateway()}>
@@ -28,6 +29,7 @@ describe('SettingsPage', () => {
   });
 
   it('exige EXCLUIR, reautentica e mostra o prazo sem afirmar que já apagou', async () => {
+    vi.setSystemTime(new Date(2026, 8, 6, 12));
     const { user } = await renderGoogleSettings();
 
     await user.click(screen.getByRole('button', { name: 'Solicitar exclusão' }));

@@ -8,7 +8,7 @@ import { checkToolchain, expectedNodeVersion, expectedPnpmVersion } from './chec
 function project(packageManager = 'pnpm@11.19.0') {
   const root = mkdtempSync(join(tmpdir(), 'poe-toolchain-'));
   writeFileSync(join(root, 'package.json'), JSON.stringify({ packageManager }));
-  writeFileSync(join(root, '.nvmrc'), '24.14.1\n');
+  writeFileSync(join(root, '.nvmrc'), '24.19.0\n');
   return root;
 }
 
@@ -16,9 +16,9 @@ test('aceita a versão exata declarada em packageManager', () => {
   const root = project();
   try {
     assert.equal(expectedPnpmVersion(root), '11.19.0');
-    assert.equal(expectedNodeVersion(root), '24.14.1');
+    assert.equal(expectedNodeVersion(root), '24.19.0');
     assert.equal(
-      checkToolchain(root, 'pnpm/11.19.0 npm/? node/v24.14.1 win32 x64', '24.14.1'),
+      checkToolchain(root, 'pnpm/11.19.0 npm/? node/v24.19.0 win32 x64', '24.19.0'),
       '11.19.0',
     );
   } finally {
@@ -30,7 +30,7 @@ test('rejeita versão diferente da declarada', () => {
   const root = project();
   try {
     assert.throws(
-      () => checkToolchain(root, 'pnpm/12.0.0 npm/? node/v24.14.1 linux x64', '24.14.1'),
+      () => checkToolchain(root, 'pnpm/12.0.0 npm/? node/v24.19.0 linux x64', '24.19.0'),
       /esperado 11\.19\.0, encontrado 12\.0\.0/,
     );
   } finally {
@@ -51,7 +51,7 @@ test('rejeita execução por outro gerenciador', () => {
   const root = project();
   try {
     assert.throws(
-      () => checkToolchain(root, 'npm/10.6.0 node/v24.14.1', '24.14.1'),
+      () => checkToolchain(root, 'npm/10.6.0 node/v24.19.0', '24.19.0'),
       /pnpm check:toolchain/,
     );
   } finally {
@@ -64,7 +64,19 @@ test('rejeita versão do Node diferente da .nvmrc', () => {
   try {
     assert.throws(
       () => checkToolchain(root, 'pnpm/11.19.0 npm/? node/v22.22.2', '22.22.2'),
-      /esperado 24\.14\.1, encontrado 22\.22\.2/,
+      /esperado 24\.19\.0, encontrado 22\.22\.2/,
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('rejeita o patch antigo mesmo permanecendo na linha Node 24', () => {
+  const root = project();
+  try {
+    assert.throws(
+      () => checkToolchain(root, 'pnpm/11.19.0 npm/? node/v24.14.1', '24.14.1'),
+      /esperado 24\.19\.0, encontrado 24\.14\.1/,
     );
   } finally {
     rmSync(root, { recursive: true, force: true });

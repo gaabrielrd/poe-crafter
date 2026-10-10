@@ -140,3 +140,9 @@ credenciais reais na suíte.
 
 O CI instala com `pnpm install --frozen-lockfile` em Node 24. Um teste que passa
 apenas com dependência hoisted ou arquivo local não declarado é inválido.
+
+Os exports de packages são verificados por `scripts/workspace-exports.test.mjs`:
+os arquivos de declaração devem existir e os módulos ESM públicos devem carregar.
+Para reproduzir o CI, use um checkout novo, instale o lockfile congelado e execute
+os gates sem copiar `dist` de outra execução. O job E2E constrói sozinho as
+suas dependências internas.

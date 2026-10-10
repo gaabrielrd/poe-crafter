@@ -12,3 +12,7 @@ allowBuilds:
   '@firebase/util': true
   protobufjs: true
   re2: true
+
+# Firebase fixa um transporte antigo; o contrato local cobre a API de gRPC.
+overrides:
+  '@firebase/firestore>@grpc/grpc-js': 1.13.6

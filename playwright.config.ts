@@ -51,7 +51,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: `pnpm --filter @poe-crafter/web build && pnpm --filter @poe-crafter/web exec vite preview --host 127.0.0.1 --port ${port}`,
+    command: `pnpm --filter @poe-crafter/web... -r build && pnpm --filter @poe-crafter/web exec vite preview --host 127.0.0.1 --port ${port}`,
     env: { ...process.env, VITE_API_URL: baseURL, VITE_AUTH_FIXTURE: 'true' },
     url: baseURL,
     reuseExistingServer: false,
