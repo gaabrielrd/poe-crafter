@@ -60,3 +60,10 @@ pnpm --filter @poe-crafter/web... -r build
 
 Vitest e `@vitest/coverage-v8` devem ser atualizados juntos, inclusive em majors;
 o grupo específico do Dependabot mantém esse contrato de peer dependency.
+
+## Transporte Firestore
+
+O override de `@grpc/grpc-js` aplica-se somente ao consumidor
+`@firebase/firestore`, que fixa uma linha vulnerável. O contrato
+`scripts/firestore-transport.test.mjs` exercita o SDK real contra um servidor
+gRPC loopback no projeto demo, incluindo leitura e commit da transação.
