@@ -31,16 +31,16 @@
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.5",
-    "@types/node": "^26.2.0",
+    "@types/node": "^26.6.4",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
-    "@vitejs/plugin-react": "^6.1.0",
+    "@vitejs/plugin-react": "^6.1.2",
     "@vitest/coverage-v8": "^5.0.0",
     "jsdom": "^30.0.1",
-    "shadcn": "^4.21.0",
+    "shadcn": "^4.21.4",
     "tailwindcss": "^4.3.3",
     "typescript": "^6.0.3",
-    "vite": "^8.2.2",
+    "vite": "^8.3.4",
     "vitest": "^5.0.0"
   }
 }
