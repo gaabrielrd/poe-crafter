@@ -86,3 +86,43 @@ teste próprio foi acrescentado, pois não há mudança de comportamento do
 produto; as suítes existentes verificam a atualização do ferramental.
 Resultados do CI no SHA publicado ficam registrados no PR18. O critério
 de remoção da cadeia FTP foi atendido; auditoria e merge seguem bloqueados.
+
+## Retomada de 24/10/2026: novos advisories e retirada de braces
+
+[GHSA-vfj7-8cjw-p6xm](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm)
+foi retirado em 23/10 por não ser explorável na prática. A reexecução completa
+no SHA 5741b6d passou Validate/E2E, mas encontrou novos advisories: 7 altos,
+16 moderados e 3 baixos. A retirada não foi tratada como aprovação automática.
+
+Foram aplicadas resoluções corrigidas dentro dos ranges existentes:
+
+| Dependência | Versão corrigida adotada                               |
+| ----------- | ------------------------------------------------------ |
+| Vite        | 8.2.4, dentro de ^8.2.2                                |
+| shadcn      | 4.22.0, dentro de ^4.21.0                              |
+| body-parser | 1.20.9 e 2.4.0, preservando as majors dos consumidores |
+| undici      | 6.29.1, 7.30.1 e 8.12.3, conforme cada consumidor      |
+| zod         | 4.6.7, via consumidores que suportam a major 4         |
+| fast-uri    | 3.1.9                                                  |
+| ip-address  | 10.7.4                                                 |
+
+O [manifesto de shadcn 4.22.0](https://registry.npmjs.org/shadcn/4.22.0)
+declara Zod ^4.2.0. Atualizar esse consumidor removeu Zod 3 sem impor uma
+major incompatível a shadcn 4.21.0. Foram conferidos também os manifests
+publicados de body-parser e undici e os ranges de Express, jsdom e dotenvx.
+As versões corrigidas já tinham mais de 24 horas de publicação.
+
+Firebase CLI permanece em 15.34.0. Specifiers diretos, overrides gRPC,
+allowBuilds, políticas, permissões e limites de testes foram preservados.
+A cadeia proxy-agent/pac-proxy-agent/get-uri/basic-ftp continua ausente.
+
+Auditoria local com pnpm 11.19.0: 26 advisories para 2 moderados, sem altos,
+críticos ou baixos. Restam uuid 9.0.1 e @opentelemetry/core 1.30.1; nenhum
+aviso foi suprimido. O comando de auditoria mantém audit-level=high no CI.
+
+Instalação congelada e `pnpm validate` passaram em Node 24.19.0, incluindo
+106 testes web com cobertura, 53 contratos, 18 Functions, lint, tipos, build
+e smoke HTTP. O resultado final do E2E e do CI publicado é registrado no PR18.
+Merge só é permitido após todos os checks aplicáveis verdes no SHA final,
+seguido de verificação da principal. Não houve alteração de comportamento
+do produto nem teste novo que apenas espelhe o lock.
